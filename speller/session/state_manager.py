@@ -1,10 +1,13 @@
 import abc
 from dataclasses import dataclass
+import logging
 from typing import Sequence
 from speller.prediction.suggestions_getter import ISuggestionsGetter
 
 from speller.prediction.t9_predictor import T9_CHARS
-from speller.session.flashing_strategy import ItemPositionType
+
+
+logger = logging.getLogger(__name__)
 
 
 class IStateManager(abc.ABC):
@@ -88,37 +91,44 @@ class StateManager(IStateManager):
         self._update_suggestions()
 
         self._history.append(self._state)
+        logger.info("StateManager: t9_input, new state: %s", self._state)
 
     def suggestion_input(self, suggestion_number: int) -> None:
         self.preselected_clear = False
         self.preselected_cancel = False
 
         if suggestion_number >= len(self.suggestions):
+            logger.info("StateManager: suggestion_number is big, skip it")
             return
         
-        self.text = " ".join((self.text, self.suggestions[suggestion_number]))
+        if self.text:
+            self.text += " "
+        self.text += self.suggestions[suggestion_number]
         self.prefix = []
         self._update_suggestions()
 
         self._history.append(self._state)
+        logger.info("StateManager: suggestions_input, new state: %s", self._state)
 
     def clear_input(self) -> None:
         self.preselected_cancel = False
         if not self.preselected_clear:
             self.preselected_clear = True
-            return
+            logger.info("StateManager: clear_input, preselect, new state: %s", self._state)
         else:
             self._initialize()
             self._history.append(self._state)
+            logger.info("StateManager: clear_input, clear, new state: %s", self._state)
 
     def cancel_input(self) -> None:
         self.preselected_clear = False
         if not self.preselected_cancel:
             self.preselected_cancel = True
-            return
+            logger.info("StateManager: cancel_input, preselected, new state: %s", self._state)
         else:
             self.preselected_cancel = False
             self._cancel()
+            logger.info("StateManager: cancel_input, cancel, new state: %s", self._state)
     
         
 

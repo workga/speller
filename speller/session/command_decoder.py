@@ -1,7 +1,9 @@
 import abc
-from typing import Sequence
+import logging
 from speller.session.flashing_strategy import ItemPositionType
-from speller.prediction.t9_predictor import T9_CHARS
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseCommand(abc.ABC):
@@ -42,5 +44,6 @@ class CommandDecoder(ICommandDecoder):
         )
 
     def decode_command(self, item_position: ItemPositionType) -> BaseCommand:
+        logger.info("CommandDecoder: called decode_command")
         return self._mapping[item_position[0]][item_position[1]]
         

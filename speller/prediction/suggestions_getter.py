@@ -1,8 +1,12 @@
 import abc
+import logging
 from typing import Sequence
 from speller.prediction.chat_gpt_predictor import IChatGptPredictor
 
 from speller.prediction.t9_predictor import IT9Predictor
+
+
+logger = logging.getLogger(__name__)
 
 
 class ISuggestionsGetter(abc.ABC):
@@ -17,4 +21,5 @@ class SuggestionsGetter(ISuggestionsGetter):
         self._chat_gpt_predictor = chat_gpt_predictor
 
     def get_suggestions(self, text: str, prefix: Sequence[int], max_suggestions: int) -> Sequence[str]:
+        logger.info("SuggestionsGetter: called get_suggestions")
         return self._t9_predictor.predict(prefix, max_suggestions)

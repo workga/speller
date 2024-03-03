@@ -1,7 +1,11 @@
 import abc
 from collections import defaultdict
+import logging
 import random
 from typing import Sequence
+
+
+logger = logging.getLogger(__name__)
     
 
 ItemPositionType = tuple[int, int]
@@ -36,6 +40,7 @@ class SquareRowColumnFlashingStrategy(IFlashingStrategy):
             sequence.append(
                 tuple((i, column_number) for i in range(self._size))
             )
+
         return sequence
     
     def predict_item_position(self, flashing_sequence: FlashingSequenceType, probabilities: list[float]) -> ItemPositionType:

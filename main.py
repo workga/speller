@@ -1,3 +1,4 @@
+import logging
 from queue import Queue
 import signal
 from threading import Event, Thread
@@ -18,6 +19,10 @@ from speller.session.session_handler import ISessionHandler, SessionHandler
 from speller.session.state_manager import StateManager
 
 
+logger = logging.getLogger(__name__)
+
+
+
 def register_shutdown_event() -> Event:
     shutdown_event = Event()
     def signal_handler(sig, frame):
@@ -29,6 +34,8 @@ def register_shutdown_event() -> Event:
 
 
 def build_speller_runner() -> Callable[[], None]:
+    logging.basicConfig(level='DEBUG')
+
     keyboard_size = 4
     epoch_size = 200 # 800 ms (200 ms + 600 ms) <=> 200 samples
     epoch_interval = 45 # now flash + dark = 80 + 100 = 180 ms <=> 45 samples
@@ -51,7 +58,7 @@ def build_speller_runner() -> Callable[[], None]:
     chat_gpt_predictor = ChatGptPredictor()
     suggestions_getter = SuggestionsGetter(t9_predictor=t9_predictor, chat_gpt_predictor=chat_gpt_predictor)
     state_manager = StateManager(suggestions_getter=suggestions_getter)
-    session_handler = SessionHandler(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager)
+    session_handler = SessionHandler(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager, shutdown_event=shutdown_event)
 
 
     def run_speller():
@@ -62,9 +69,14 @@ def build_speller_runner() -> Callable[[], None]:
         session_handler_thread.start()
 
         while True:
+            logger.info("speller_runner: waiting threads...")
+            logger.info(f"speller_runner: {data_streamer_thread.is_alive()=}")
+            logger.info(f"speller_runner: {session_handler_thread.is_alive()=}")
             if not any((data_streamer_thread.is_alive(), session_handler_thread.is_alive())):
                 break
             sleep(1)
+        logger.info("speller_runner: finish waiting threads")
+        
 
     return run_speller
     

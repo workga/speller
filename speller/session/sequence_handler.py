@@ -1,7 +1,11 @@
 import abc
+import logging
 from speller.classification.classifier import IClassifier
 from speller.data_aquisition.epoch_getter import IEpochGetter
 from speller.session.flashing_strategy import FlashingSequenceType, IFlashingStrategy, ItemPositionType
+
+
+logger = logging.getLogger(__name__)
 
 
 class ISequenceHandler(abc.ABC):
@@ -24,11 +28,13 @@ class SequenceHandler(ISequenceHandler):
         return self._flashing_strategy.get_flashing_sequence()
 
     def handle_sequence(self, flashing_sequence: FlashingSequenceType) -> ItemPositionType:
+        logger.info("SequnceHandler: start handling sequence")
         epoch_generator = self._epoch_getter.get_epochs(len(flashing_sequence))
         probabilities = [self._classifier.classify(epoch) for epoch in epoch_generator]
         if len(probabilities) < len(flashing_sequence):
-            probabilities.extend([0.]*(len(flashing_sequence) - len(probabilities)))
+            raise RuntimeError("SequnceHandler: run out of epochs")
 
+        logger.info("SequnceHandler: finishing handling sequence")
         return self._flashing_strategy.predict_item_position(flashing_sequence, probabilities)
 
 

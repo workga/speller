@@ -1,9 +1,13 @@
 import abc
 from contextlib import contextmanager
+import logging
 from threading import Event
 import time
 from typing import Iterator, Sequence, cast
 from unapi import Unicorn
+
+
+logger = logging.getLogger(__name__)
 
 
 DataSampleType = Sequence[float]
@@ -27,9 +31,10 @@ class StubDataCollector(IDataCollector):
             time.sleep(self._SLEEP_S)
             counter += 1
             if counter >= self._SAMPLES_COUNT:
-                print("StubDataCollector: _SAMPLES_COUNT exceeded")
+                logger.info("StubDataCollector: _SAMPLES_COUNT exceeded")
                 return
-        print(f"StubDataCollector: shutdown_event was set at {counter}")
+
+        logger.info(f"StubDataCollector: shutdown_event was set at {counter}")
 
 
 class UnicornDataCollector(IDataCollector): 
@@ -61,6 +66,7 @@ class UnicornDataCollector(IDataCollector):
 
     def _get_samples(self) -> Iterator[DataSampleType]:
         flatten_batch = self.bci.getData(self.handle_id, self._BATCH_SIZE)
+        logger.info("UnicornDataCollector: got batch of data from bci")
         samples = (flatten_batch[i * self.number_of_channels, (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
         for sample in samples:
             yield [sample[i] for i in self.eeg_indexes]
@@ -69,6 +75,7 @@ class UnicornDataCollector(IDataCollector):
         with self._start_acquisition():
             while not self._shutdown_event.is_set():
                 yield from self._get_samples()
+            logger.info('UnicornDataCollector: shutdown_event was set')
 
     def __del__(self):
         self.bci.closeDevice(self.handle_id)
