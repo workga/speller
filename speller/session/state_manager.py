@@ -33,6 +33,7 @@ class State(HistoryState):
 
 class IStateManager(abc.ABC):
     is_session_running: Event
+    shutdown_event: Event
 
     @abc.abstractmethod
     def get_state(self) -> State:
@@ -55,6 +56,10 @@ class IStateManager(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def shutdown(self) -> None:
+        pass
+
+    @abc.abstractmethod
     def t9_input(self, charset_number: int) -> None:
         pass
 
@@ -74,12 +79,13 @@ class IStateManager(abc.ABC):
 class StateManager(IStateManager):
     _MAX_SUGGESTIONS = 6
 
-    def __init__(self, suggestions_getter: ISuggestionsGetter):
+    def __init__(self, suggestions_getter: ISuggestionsGetter, shutdown_event: Event):
         self._suggestions_getter = suggestions_getter
         self._history: list[HistoryState] = []
         self._initialize()
         self.info = ""
         self.is_session_running: Event = Event()
+        self.shutdown_event = shutdown_event
 
     def _initialize(self) -> None:
         self.text = ""
@@ -100,6 +106,9 @@ class StateManager(IStateManager):
 
     def finish_session(self) -> None:
         self.is_session_running.clear()
+
+    def shutdown(self) -> None:
+        self.shutdown_event.set()
     
     def get_state(self) -> State:
         return State(

@@ -4,5 +4,5 @@
 python -m venv venv
 .\venv\Scripts\activate
 poetry install
-python .\main.py
+python main.py
 ```

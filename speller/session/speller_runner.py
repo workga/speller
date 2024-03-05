@@ -24,17 +24,21 @@ class SpellerRunner(ISessionHandler):
         sequence_handler: ISequenceHandler,
         command_decoder: ICommandDecoder,
         state_manager: IStateManager,
-        shutdown_event: Event,
     ):
         self._sequence_handler = sequence_handler
         self._command_decoder = command_decoder
         self._state_manager = state_manager
-        self._shutdown_event = shutdown_event
 
     def handle_session(self) -> None:
         logger.info("SessionHandler: start handling session")
         logger.info("SessionHandler: wait is_session_running event")
-        self._state_manager.is_session_running.wait()
+        while True:
+            if self._state_manager.is_session_running.wait(1):
+                break
+            if self._state_manager.shutdown_event.is_set():
+                logger.info("SessionHandler: shutdown_event was set")
+                return
+
         logger.info("SessionHandler: is_session_running event was set")
         while self._state_manager.is_session_running.is_set():
             predicted_item_position = self._sequence_handler.handle_sequence()
@@ -42,6 +46,9 @@ class SpellerRunner(ISessionHandler):
             command = self._command_decoder.decode_command(predicted_item_position)
             logger.info("SessionHandler: got command %s", command)
             self._handle_command(command)
+            if self._state_manager.shutdown_event.is_set():
+                logger.info("SessionHandler: shutdown_event was set")
+                return
         logger.info("SessionHandler: is_session_running was cleared")
 
     @singledispatchmethod

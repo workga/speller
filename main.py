@@ -55,11 +55,11 @@ def build_runner() -> Callable[[], None]:
     t9_predictor = StubT9Predictor()
     chat_gpt_predictor = ChatGptPredictor()
     suggestions_getter = SuggestionsGetter(t9_predictor=t9_predictor, chat_gpt_predictor=chat_gpt_predictor)
-    state_manager = StateManager(suggestions_getter=suggestions_getter)
+    state_manager = StateManager(suggestions_getter=suggestions_getter, shutdown_event=shutdown_event)
     sequence_handler = SequenceHandler(epoch_getter=epoch_getter, classifier=classifier, flashing_strategy=flashing_strategy, state_manager=state_manager)
 
     command_decoder = CommandDecoder()
-    speller_runner = SpellerRunner(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager, shutdown_event=shutdown_event)
+    speller_runner = SpellerRunner(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager)
 
     speller_window = SpellerWindow(state_manager=state_manager)
 

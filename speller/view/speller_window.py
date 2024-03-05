@@ -1,6 +1,7 @@
 import abc
 from functools import partial
 import logging
+from threading import Event
 from tkinter import Button, StringVar, Tk
 from typing import Callable
 
@@ -44,5 +45,5 @@ class SpellerWindow(ISpellerWindow):
 
     def _finish(self) -> None:
         logger.error("FINISH!")
-        self._state_manager.finish_session()
+        self._state_manager.shutdown()
         self._window.destroy()
