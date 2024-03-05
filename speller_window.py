@@ -19,19 +19,24 @@ class ISpellerWindow(abc.ABC):
 
 
 
-class ConfigParams:
-    def __init__(self):
-        self.config_parser = configparser.RawConfigParser()
-        self.config_parser.read("./conf_files/default.cfg")
-        section = "Parameters"
+# class ConfigParams:
+#     def __init__(self):
+#         self.config_parser = configparser.RawConfigParser()
+#         self.config_parser.read("./conf_files/default.cfg")
+#         section = "Parameters"
 
-        self.number_of_rows = self.config_parser.getint(section, "number_of_rows")
-        self.number_of_columns = self.config_parser.getint(section, "number_of_columns")
-        self.flash_duration = self.config_parser.getint(section, "flash_duration")
-        self.break_duration = self.config_parser.getint(section, "break_duration")
-        self.imagesize = self.config_parser.getint(section, "imagesize")
-        self.images_folder_path = "./number_images"
-        self.flash_image_path = "./flash_images/einstein.jpg"
+#         self.number_of_rows = self.config_parser.getint(section, "number_of_rows")
+#         self.number_of_columns = self.config_parser.getint(section, "number_of_columns")
+#         self.flash_duration = self.config_parser.getint(section, "flash_duration")
+#         self.break_duration = self.config_parser.getint(section, "break_duration")
+#         self.imagesize = self.config_parser.getint(section, "imagesize")
+#         self.images_folder_path = "./number_images"
+#         self.flash_image_path = "./flash_images/einstein.jpg"
+        
+#         self.epoch_size = self.config_parser.getint(section, "epoch_size")
+#         self.epoch_interval = self.config_parser.getint(section, "epoch_interval")
+
+#         self.update_interval = 10
 
 
 class P300Window:

@@ -1,5 +1,6 @@
 import abc
 import configparser
+from functools import partial
 import glob
 import os
 from queue import Queue
@@ -10,115 +11,95 @@ from typing import Iterator
 from PIL import Image, ImageTk
 
 
-from speller.session.flashing_strategy import FlashingListType, IFlashingStrategy, SquareRowColumnFlashingStrategy
+from speller.session.flashing_strategy import FlashingListType, FlashingSequenceType, IFlashingStrategy, SquareRowColumnFlashingStrategy
 from speller.session.state_manager import IStateManager
+from speller.view.speller_window import ISpellerWindow
 from speller_event import SpellerEventType
 
 
-
-class ConfigParams:
-    def __init__(self):
-        self.config_parser = configparser.RawConfigParser()
-        self.config_parser.read("./conf_files/default.cfg")
-        section = "Parameters"
-
-        self.number_of_rows = self.config_parser.getint(section, "number_of_rows")
-        self.number_of_columns = self.config_parser.getint(section, "number_of_columns")
-        self.flash_duration = self.config_parser.getint(section, "flash_duration")
-        self.break_duration = self.config_parser.getint(section, "break_duration")
-        self.imagesize = self.config_parser.getint(section, "imagesize")
-        self.images_folder_path = "./number_images"
-        self.flash_image_path = "./flash_images/einstein.jpg"
-
-
-class IView(abc.ABC):
+class ISpellerView(abc.ABC):
     @abc.abstractmethod
     def run(self) -> None:
         pass
 
-    # @abc.abstractmethod
-    # def start(self, flashing_strategy: IFlashingStrategy) -> None:
-    #     pass
+    @abc.abstractmethod
+    def run_flashing_sequence(self, flashing_sequence: FlashingSequenceType) -> None:
+        pass
 
 
-class SpellerView(IView):
-    _IMAGES_DIR = "./static"
-    _IMAGES_NAMES = (
-        "background",
-        "input",
-        "suggestions",
-        "keyboard",
-        "info",
-    )
-    _SCALING_FACTOR = 0.8
-    _PADDING = 5
-
-    # def __init__(self, state_manager: IStateManager, event_queue: Queue):
-    #     self._state_manager = state_manager
-    #     self._event_queue = event_queue
-
-    def __init__(self) -> None:
-        self._initialize_window()
-
-    def _load_images(self) -> dict[str, ImageTk.PhotoImage]:
-        images = {}
-        for image_name in self._IMAGES_NAMES:
-            image = Image.open(os.path.join(self._IMAGES_DIR, image_name + ".png"))
-            image = image.resize(
-                (
-                    int(image.width * self._SCALING_FACTOR),
-                    int(image.height * self._SCALING_FACTOR),
-                ),
-                Image.ANTIALIAS,
-            )
-            images[image_name] = ImageTk.PhotoImage(image)
-        return images
-
-    def _initialize_window(self) -> None:
-        self._window = Tk()
-        self._window.protocol("WM_DELETE_WINDOW", self._finish)
-
-        self._images = self._load_images()
-
-        self._main_frame = Frame(self._window)
-        self._main_frame.grid(
-            row=0,
-            column=0,
-            rowspan=self._images["background"].width(),
-            columnspan=self._images["background"].height(),
-        )
-
-        markup = (
-            ("input", 0, 0),
-            ("suggestions", 0, self._images["input"].width()),
-            ("keyboard", self._images["keyboard"].height(), 0),
-            ("info", self._images["info"].height(), self._images["input"].width()),
-        )
-        self._labels = {}        
-        for name, row, column in markup:
-            label = Label(self._main_frame, image=self._images[name])
-            label.grid(
-                row=row,
-                column=column,
-                rowspan=self._images[name].width(),
-                columnspan=self._images[name].height(),
-                padx=self._PADDING,
-                pady=self._PADDING,
-            )
-            self._labels[name] = label
-
+class SpellerView(ISpellerView):
+    def __init__(self, state_manager: IStateManager, speller_window: ISpellerWindow):
+        self._speller_window = speller_window
 
     def run(self) -> None:
-        self._window.mainloop()
-
-    
-    def _finish(self) -> None:
-        self._window.destroy()
-        # self._event_queue.put(SpellerEventType.FINISH)
+        self._speller_window.run()
 
 
-v = SpellerView()
-v.run()
+
+
+
+    # _IMAGES_DIR = "./static"
+    # _IMAGES_NAMES = (
+    #     "background",
+    #     "input",
+    #     "suggestions",
+    #     "keyboard",
+    #     "info",
+    # )
+    # _SCALING_FACTOR = 0.8
+    # _PADDING = 5
+
+
+    # def _load_images(self) -> dict[str, ImageTk.PhotoImage]:
+    #     images = {}
+    #     for image_name in self._IMAGES_NAMES:
+    #         image = Image.open(os.path.join(self._IMAGES_DIR, image_name + ".png"))
+    #         image = image.resize(
+    #             (
+    #                 int(image.width * self._SCALING_FACTOR),
+    #                 int(image.height * self._SCALING_FACTOR),
+    #             ),
+    #             Image.ANTIALIAS,
+    #         )
+    #         images[image_name] = ImageTk.PhotoImage(image)
+    #     return images
+
+    # def _initialize_window(self) -> None:
+    #     self._window = Tk()
+    #     self._window.protocol("WM_DELETE_WINDOW", self._finish)
+
+    #     self._images = self._load_images()
+
+    #     self._main_frame = Frame(self._window)
+    #     self._main_frame.grid(
+    #         row=0,
+    #         column=0,
+    #         rowspan=self._images["background"].width(),
+    #         columnspan=self._images["background"].height(),
+    #     )
+
+    #     markup = (
+    #         ("input", 0, 0),
+    #         ("suggestions", 0, self._images["input"].width()),
+    #         ("keyboard", self._images["keyboard"].height(), 0),
+    #         ("info", self._images["info"].height(), self._images["input"].width()),
+    #     )
+    #     self._labels = {}        
+    #     for name, row, column in markup:
+    #         label = Label(self._main_frame, image=self._images[name])
+    #         label.grid(
+    #             row=row,
+    #             column=column,
+    #             rowspan=self._images[name].width(),
+    #             columnspan=self._images[name].height(),
+    #             padx=self._PADDING,
+    #             pady=self._PADDING,
+    #         )
+    #         self._labels[name] = label
+
+
+# v = SpellerView()
+# v.run()
         
     #     self._config = ConfigParams()
     #     self._running = 0

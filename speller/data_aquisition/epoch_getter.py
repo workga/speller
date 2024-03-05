@@ -3,7 +3,9 @@ import logging
 from queue import Empty, Queue
 from typing import Iterator, Sequence
 
-from speller.data_aquisition.data_collector import DataSampleType
+from speller.data_aquisition.data_collector import DataSampleType, IDataCollector, ISyncDataCollector
+from speller.data_aquisition.data_streamer import IDataStreamer
+from speller.config import ConfigParams
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ class IEpochGetter(abc.ABC):
         pass
 
 
-class EpochGetter(IEpochGetter):
+class QueueEpochGetter(IEpochGetter):
     _QUEUE_TIMEOUT = 1
 
     def __init__(self, data_queue: Queue, epoch_size: int, epoch_interval: int):
@@ -39,6 +41,33 @@ class EpochGetter(IEpochGetter):
                 current_epoch = current_epoch[self._epoch_interval:]
                 for _ in range(self._epoch_interval):
                     current_epoch.append(self._data_queue.get(timeout=self._QUEUE_TIMEOUT))
+                logger.info("EpochGetter: yield epoch")
+                yield current_epoch
+            logger.info("EpochGetter: stop yielding epochs")
+        except Empty:
+            logger.info("EpochGetter: queue is empty, got timeout")
+            return
+  
+class EpochGetter(IEpochGetter):
+    def __init__(self, data_collector: ISyncDataCollector):
+        self._config = ConfigParams()
+        self._data_collector = data_collector
+
+    def get_epochs(self, number_of_epoches: int) -> Iterator[EpochType]:
+        logger.info("EpochGetter: start yielding %s epochs", number_of_epoches)
+        number_of_samples = self._config.epoch_size + (number_of_epoches - 1) * self._config.epoch_interval
+        sample_generator = self._data_collector.collect(number_of_samples)
+        try:
+            current_epoch = []
+            for _ in range(self._config.epoch_size):
+                current_epoch.append(next(sample_generator))
+            logger.info("EpochGetter: yield epoch")
+            yield current_epoch
+
+            for _ in range(number_of_epoches - 1):
+                current_epoch = current_epoch[self._config.epoch_interval:]
+                for _ in range(self._config.epoch_interval):
+                    current_epoch.append(next(sample_generator))
                 logger.info("EpochGetter: yield epoch")
                 yield current_epoch
             logger.info("EpochGetter: stop yielding epochs")

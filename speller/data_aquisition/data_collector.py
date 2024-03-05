@@ -1,9 +1,10 @@
 import abc
 from contextlib import contextmanager
+from itertools import islice
 import logging
 from threading import Event
 import time
-from typing import Iterator, Sequence, cast
+from typing import Any, Iterator, Sequence, cast
 from unapi import Unicorn
 
 
@@ -15,7 +16,12 @@ DataSampleType = Sequence[float]
 
 class IDataCollector(abc.ABC):
     @abc.abstractmethod
-    def collect(self, batch_size: int = 1) -> Iterator[DataSampleType]:
+    def collect(self) -> Iterator[DataSampleType]:
+        pass
+
+class ISyncDataCollector(abc.ABC):
+    @abc.abstractmethod
+    def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         pass
 
 class StubDataCollector(IDataCollector):
@@ -35,6 +41,18 @@ class StubDataCollector(IDataCollector):
                 return
 
         logger.info(f"StubDataCollector: shutdown_event was set at {counter}")
+
+class SyncStubDataCollector(ISyncDataCollector, StubDataCollector):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._counter = 0
+
+    def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
+        for _ in range(number_of_samples):
+            yield (self._counter,) * 8
+            time.sleep(self._SLEEP_S)
+            self._counter += 1
+        logger.info("SyncStubDataCollector: number_of_samples exceeded")
 
 
 class UnicornDataCollector(IDataCollector): 
@@ -79,6 +97,11 @@ class UnicornDataCollector(IDataCollector):
 
     def __del__(self):
         self.bci.closeDevice(self.handle_id)
+
+class SyncUnicornDataCollector(ISyncDataCollector, UnicornDataCollector):
+    def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
+        with self._start_acquisition():
+            yield from islice(self._get_samples(), number_of_samples)
 
 
 # s = Event()

@@ -6,6 +6,7 @@ from threading import Event
 from speller.session.sequence_handler import ISequenceHandler
 from speller.session.command_decoder import BaseCommand, ICommandDecoder, InputCancelCommand, InputClearCommand, InputSuggestionCommand, InputT9Command
 from speller.session.state_manager import IStateManager
+from speller.view.speller_view import ISpellerView
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class ISessionHandler(abc.ABC):
         pass
 
 
-class SessionHandler(ISessionHandler):
+class SpellerRunner(ISessionHandler):
     def __init__(
         self,
         sequence_handler: ISequenceHandler,
@@ -31,20 +32,17 @@ class SessionHandler(ISessionHandler):
         self._shutdown_event = shutdown_event
 
     def handle_session(self) -> None:
-        logger.info("SessionHandler: start handling")
-        while not self._shutdown_event.is_set():
-            flashing_sequence = self._sequence_handler.get_flashing_sequence()
-            logger.info("SessionHandler: created flashing sequence")
-            
-            # use here flashing_sequence to start flashing in IView synchronously
-            # do not forget about baseline
-
-            predicted_item_position = self._sequence_handler.handle_sequence(flashing_sequence)
+        logger.info("SessionHandler: start handling session")
+        logger.info("SessionHandler: wait is_session_running event")
+        self._state_manager.is_session_running.wait()
+        logger.info("SessionHandler: is_session_running event was set")
+        while self._state_manager.is_session_running.is_set():
+            predicted_item_position = self._sequence_handler.handle_sequence()
             logger.info("SessionHandler: got position=%s", predicted_item_position)
             command = self._command_decoder.decode_command(predicted_item_position)
             logger.info("SessionHandler: got command %s", command)
             self._handle_command(command)
-        logger.info("SessionHandler: shutdown_event was set")
+        logger.info("SessionHandler: is_session_running was cleared")
 
     @singledispatchmethod
     def _handle_command(self, command: BaseCommand) -> None:
@@ -65,6 +63,3 @@ class SessionHandler(ISessionHandler):
     @_handle_command.register
     def _handle_input_cancel_command(self, command: InputCancelCommand) -> None:
         self._state_manager.cancel_input()
-
-
-

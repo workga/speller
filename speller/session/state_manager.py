@@ -1,26 +1,57 @@
 import abc
 from dataclasses import dataclass
 import logging
+from threading import Event
 from typing import Sequence
 from speller.prediction.suggestions_getter import ISuggestionsGetter
 
 from speller.prediction.t9_predictor import T9_CHARS
+from speller.session.flashing_strategy import FlashingListType
 
 
 logger = logging.getLogger(__name__)
 
 
-class IStateManager(abc.ABC):
+@dataclass
+class HistoryState:
     text: str
     prefix: list[int]
     suggestions: Sequence[str]
-    preselected_clear: bool
-    preselected_cancel: bool
-    info: str
 
     @property
-    @abc.abstractmethod
     def full_text(self) -> str:
+        return self.text + ''.join(T9_CHARS[i][0] for i in self.prefix)
+
+
+@dataclass
+class State(HistoryState):
+    info: str
+    preselected_clear: bool
+    preselected_cancel: bool
+    flashing_list: FlashingListType
+
+
+class IStateManager(abc.ABC):
+    is_session_running: Event
+
+    @abc.abstractmethod
+    def get_state(self) -> State:
+        pass
+
+    @abc.abstractmethod
+    def set_flashing_list(self, flashing_list: FlashingListType) -> None:
+        pass
+
+    @abc.abstractmethod
+    def reset_flashing_list(self) -> None:
+        pass
+
+    @abc.abstractmethod
+    def start_session(self) -> None:
+        pass
+
+    @abc.abstractmethod
+    def finish_session(self) -> None:
         pass
 
     @abc.abstractmethod
@@ -38,20 +69,17 @@ class IStateManager(abc.ABC):
     @abc.abstractmethod
     def cancel_input(self) -> None:
         pass
-
-@dataclass
-class State:
-    text: str
-    prefix: list[int]
-    suggestions: Sequence[str]
+    
 
 class StateManager(IStateManager):
     _MAX_SUGGESTIONS = 6
 
     def __init__(self, suggestions_getter: ISuggestionsGetter):
         self._suggestions_getter = suggestions_getter
+        self._history: list[HistoryState] = []
         self._initialize()
-        self._history: list[State] = []
+        self.info = ""
+        self.is_session_running: Event = Event()
 
     def _initialize(self) -> None:
         self.text = ""
@@ -59,10 +87,34 @@ class StateManager(IStateManager):
         self.suggestions =[]
         self.preselected_clear = False
         self.preselected_cancel = False
+        self.flashing_list = []
+
+    def set_flashing_list(self, flashing_list: FlashingListType) -> None:
+        self.flashing_list = flashing_list
+
+    def reset_flashing_list(self) -> None:
+        self.flashing_list = []
+
+    def start_session(self) -> None:
+        self.is_session_running.set()
+
+    def finish_session(self) -> None:
+        self.is_session_running.clear()
+    
+    def get_state(self) -> State:
+        return State(
+            text=self.text,
+            prefix=self.prefix,
+            suggestions=self.suggestions,
+            info=self.info,
+            preselected_clear=self.preselected_clear,
+            preselected_cancel=self.preselected_cancel,
+            flashing_list=self.flashing_list
+        )
 
     @property
-    def _state(self) -> State:
-        return State(
+    def _history_state(self) -> HistoryState:
+        return HistoryState(
             text=self.text,
             prefix=self.prefix,
             suggestions=self.suggestions,
@@ -75,10 +127,6 @@ class StateManager(IStateManager):
         self.text = previous_state.text
         self.prefix = previous_state.prefix
         self.suggestions = previous_state.suggestions
-
-    @property
-    def full_text(self) -> str:
-        return self.text + ''.join(T9_CHARS[i][0] for i in self.prefix)
     
     def _update_suggestions(self):
         self.suggestions = self._suggestions_getter.get_suggestions(self.text, self.prefix, self._MAX_SUGGESTIONS)
@@ -90,8 +138,8 @@ class StateManager(IStateManager):
         self.prefix.append(charset_number)
         self._update_suggestions()
 
-        self._history.append(self._state)
-        logger.info("StateManager: t9_input, new state: %s", self._state)
+        self._history.append(self._history_state)
+        logger.info("StateManager: t9_input, new state: %s", self._history_state)
 
     def suggestion_input(self, suggestion_number: int) -> None:
         self.preselected_clear = False
@@ -107,28 +155,28 @@ class StateManager(IStateManager):
         self.prefix = []
         self._update_suggestions()
 
-        self._history.append(self._state)
-        logger.info("StateManager: suggestions_input, new state: %s", self._state)
+        self._history.append(self._history_state)
+        logger.info("StateManager: suggestions_input, new state: %s", self._history_state)
 
     def clear_input(self) -> None:
         self.preselected_cancel = False
         if not self.preselected_clear:
             self.preselected_clear = True
-            logger.info("StateManager: clear_input, preselect, new state: %s", self._state)
+            logger.info("StateManager: clear_input, preselect, new state: %s", self._history_state)
         else:
             self._initialize()
-            self._history.append(self._state)
-            logger.info("StateManager: clear_input, clear, new state: %s", self._state)
+            self._history.append(self._history_state)
+            logger.info("StateManager: clear_input, clear, new state: %s", self._history_state)
 
     def cancel_input(self) -> None:
         self.preselected_clear = False
         if not self.preselected_cancel:
             self.preselected_cancel = True
-            logger.info("StateManager: cancel_input, preselected, new state: %s", self._state)
+            logger.info("StateManager: cancel_input, preselected, new state: %s", self._history_state)
         else:
             self.preselected_cancel = False
             self._cancel()
-            logger.info("StateManager: cancel_input, cancel, new state: %s", self._state)
+            logger.info("StateManager: cancel_input, cancel, new state: %s", self._history_state)
     
         
 
