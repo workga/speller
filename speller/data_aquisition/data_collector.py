@@ -73,7 +73,7 @@ class UnicornDataCollector(IDataCollector):
         self.config = self.bci.getConfiguration(self.handle_id)
         self.number_of_channels = len(self.config.channels)
 
-        channel_name_to_index = {channel.name: channel.index for channel in self.config.channels}
+        channel_name_to_index = {channel.name.decode(): channel.index for channel in self.config.channels}
         self.eeg_indexes = [channel_name_to_index[name] for name in self._NAMES_OF_EEG_CHANNELS]
 
     @contextmanager
@@ -84,8 +84,7 @@ class UnicornDataCollector(IDataCollector):
 
     def _get_samples(self) -> Iterator[DataSampleType]:
         flatten_batch = self.bci.getData(self.handle_id, self._BATCH_SIZE)
-        logger.info("UnicornDataCollector: got batch of data from bci")
-        samples = (flatten_batch[i * self.number_of_channels, (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
+        samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
         for sample in samples:
             yield [sample[i] for i in self.eeg_indexes]
     
@@ -101,7 +100,16 @@ class UnicornDataCollector(IDataCollector):
 class SyncUnicornDataCollector(ISyncDataCollector, UnicornDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         with self._start_acquisition():
-            yield from islice(self._get_samples(), number_of_samples)
+            counter = 0
+            while True:
+                flatten_batch = self.bci.getData(self.handle_id, self._BATCH_SIZE)
+                samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
+                for sample in samples:
+                    yield [sample[i] for i in self.eeg_indexes]
+                    counter +=1
+                    if counter >= number_of_samples:
+                        return
+
 
 
 # s = Event()
@@ -113,3 +121,13 @@ class SyncUnicornDataCollector(ISyncDataCollector, UnicornDataCollector):
 #     counter += 1
 #     if counter > 10:
 #         s.set()
+            
+# u = SyncUnicornDataCollector(Event())
+# t = time.monotonic()
+# for s in u.collect(15000):
+#     pass
+# print(time.monotonic() - t)
+            
+# u = UnicornDataCollector(Event())
+# for s in u.collect():
+#     print(s)

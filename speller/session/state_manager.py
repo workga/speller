@@ -158,9 +158,7 @@ class StateManager(IStateManager):
             logger.info("StateManager: suggestion_number is big, skip it")
             return
         
-        if self.text:
-            self.text += " "
-        self.text += self.suggestions[suggestion_number]
+        self.text += self.suggestions[suggestion_number] + " "
         self.prefix = []
         self._update_suggestions()
 

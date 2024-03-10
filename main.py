@@ -5,7 +5,7 @@ from threading import Event, Thread
 from time import sleep
 from typing import Callable
 
-from speller.data_aquisition.data_collector import StubDataCollector, SyncStubDataCollector, UnicornDataCollector
+from speller.data_aquisition.data_collector import StubDataCollector, SyncStubDataCollector, SyncUnicornDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, QueueEpochGetter
 from speller.data_aquisition.data_streamer import DataStreamer
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor
@@ -34,7 +34,7 @@ def register_shutdown_event() -> Event:
 
 
 def build_runner() -> Callable[[], None]:
-    logging.basicConfig(level='DEBUG')
+    logging.basicConfig(level='INFO')
 
     keyboard_size = 4
     # data_queue = Queue()

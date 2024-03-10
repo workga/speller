@@ -30,7 +30,7 @@ class SequenceHandler(ISequenceHandler):
     def handle_sequence(self) -> ItemPositionType:
         logger.info("SequnceHandler: start handling sequence")
         flashing_sequence = self._flashing_strategy.get_flashing_sequence()
-        logger.info("SequnceHandler: got flashing sequence")
+        logger.debug("SequnceHandler: got flashing sequence")
         epoch_generator = self._epoch_getter.get_epochs(len(flashing_sequence))
         
         self._run_state_updater(flashing_sequence)
@@ -44,7 +44,7 @@ class SequenceHandler(ISequenceHandler):
     
     def _run_state_updater(self, flashing_sequence: FlashingSequenceType):
         def task():
-            logger.info("SequnceHandler: running state updater")
+            logger.debug("SequnceHandler: running state updater")
             time.sleep(self._config.epoch_baseline / 1000)
             for flashing_list in flashing_sequence:
                 self._state_manager.set_flashing_list(flashing_list)

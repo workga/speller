@@ -29,23 +29,23 @@ class QueueEpochGetter(IEpochGetter):
         self._epoch_interval = epoch_interval
 
     def get_epochs(self, number_of_epoches: int) -> Iterator[EpochType]:
-        logger.info("EpochGetter: start yielding epochs")
+        logger.debug("EpochGetter: start yielding epochs")
         try:
             current_epoch = []
             for _ in range(self._epoch_size):
                 current_epoch.append(self._data_queue.get(timeout=self._QUEUE_TIMEOUT))
-            logger.info("EpochGetter: yield epoch")
+            logger.debug("EpochGetter: yield epoch")
             yield current_epoch
 
             for _ in range(number_of_epoches - 1):
                 current_epoch = current_epoch[self._epoch_interval:]
                 for _ in range(self._epoch_interval):
                     current_epoch.append(self._data_queue.get(timeout=self._QUEUE_TIMEOUT))
-                logger.info("EpochGetter: yield epoch")
+                logger.debug("EpochGetter: yield epoch")
                 yield current_epoch
-            logger.info("EpochGetter: stop yielding epochs")
+            logger.debug("EpochGetter: stop yielding epochs")
         except Empty:
-            logger.info("EpochGetter: queue is empty, got timeout")
+            logger.debug("EpochGetter: queue is empty, got timeout")
             return
   
 class EpochGetter(IEpochGetter):
@@ -54,26 +54,24 @@ class EpochGetter(IEpochGetter):
         self._data_collector = data_collector
 
     def get_epochs(self, number_of_epoches: int) -> Iterator[EpochType]:
-        logger.info("EpochGetter: start yielding %s epochs", number_of_epoches)
+        logger.debug("EpochGetter: start yielding %s epochs", number_of_epoches)
         number_of_samples = self._config.epoch_size + (number_of_epoches - 1) * self._config.epoch_interval
         sample_generator = self._data_collector.collect(number_of_samples)
-        try:
-            current_epoch = []
-            for _ in range(self._config.epoch_size):
-                current_epoch.append(next(sample_generator))
-            logger.info("EpochGetter: yield epoch")
-            yield current_epoch
+        
+        current_epoch = []
+        for _ in range(self._config.epoch_size):
+            current_epoch.append(next(sample_generator))
+        logger.debug("EpochGetter: yield epoch")
+        yield current_epoch
 
-            for _ in range(number_of_epoches - 1):
-                current_epoch = current_epoch[self._config.epoch_interval:]
-                for _ in range(self._config.epoch_interval):
-                    current_epoch.append(next(sample_generator))
-                logger.info("EpochGetter: yield epoch")
-                yield current_epoch
-            logger.info("EpochGetter: stop yielding epochs")
-        except Empty:
-            logger.info("EpochGetter: queue is empty, got timeout")
-            return
+        for _ in range(number_of_epoches - 1):
+            current_epoch = current_epoch[self._config.epoch_interval:]
+            for _ in range(self._config.epoch_interval):
+                current_epoch.append(next(sample_generator))
+            logger.debug("EpochGetter: yield epoch")
+            yield current_epoch
+        next(sample_generator, None)
+        logger.debug("EpochGetter: stop yielding epochs")
 
 
 # q = Queue()

@@ -14,7 +14,6 @@ from PIL import Image, ImageTk
 from speller.session.flashing_strategy import FlashingListType, FlashingSequenceType, IFlashingStrategy, SquareRowColumnFlashingStrategy
 from speller.session.state_manager import IStateManager
 from speller.view.speller_window import ISpellerWindow
-from speller_event import SpellerEventType
 
 
 class ISpellerView(abc.ABC):

@@ -44,6 +44,6 @@ class CommandDecoder(ICommandDecoder):
         )
 
     def decode_command(self, item_position: ItemPositionType) -> BaseCommand:
-        logger.info("CommandDecoder: called decode_command")
+        logger.debug("CommandDecoder: called decode_command")
         return self._mapping[item_position[0]][item_position[1]]
         

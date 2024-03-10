@@ -16,11 +16,11 @@ class IClassifier(abc.ABC):
 
 class StubClassifier(IClassifier):
     def classify(self, epoch: EpochType) -> float:
-        logger.info("StubClassifier: called classify()")
+        logger.debug("StubClassifier: called classify()")
         return random()
     
 
 class Classifier(IClassifier):
     def classify(self, epoch: EpochType) -> float:
-        logger.info("Classifier: called classify()")
+        logger.debug("Classifier: called classify()")
         return random()
