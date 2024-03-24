@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
+    repetitions_count: int = 2
 
 class FilesSettings(BaseSettings):
     images_dir: Path = Path("./static")

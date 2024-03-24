@@ -140,7 +140,7 @@ class SpellerWindow(ISpellerWindow):
         self._start_btn_text = StringVar()
         self._start_btn_text.set("Start")
         self._start_btn = Button(self._speller_frame, textvariable=self._start_btn_text, command=self._handle_start_btn)
-        self._start_btn.grid(row=self._config.number_of_rows + 1, column=0, columnspan=self._config.number_of_columns)
+        self._start_btn.grid(row=self._strategy_settings.keyboard_size + 1, column=0, columnspan=self._strategy_settings.keyboard_size)
 
     def _initialize_keyboard(self) -> None:
         pattern = self._files_settings.keyboard_items_pattern

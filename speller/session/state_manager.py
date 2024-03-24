@@ -154,7 +154,6 @@ class StateManager(IStateManager):
         logger.info("StateManager: t9_input, new state: %s", self._history_state)
 
     def suggestion_input(self, suggestion_number: int) -> None:
-        self.info = f'[ВВОД] ВАРИАНТ {suggestion_number + 1}' 
         self.preselected_clear = False
         self.preselected_cancel = False
 
@@ -162,6 +161,7 @@ class StateManager(IStateManager):
             logger.info("StateManager: suggestion_number is big, skip it")
             self.info = f'[ПРОПУСК] ВАРИАНТ {suggestion_number + 1} недоступен'
             return
+        self.info = f'[ВВОД] ВАРИАНТ {suggestion_number + 1}' 
         
         self.text += self.suggestions[suggestion_number] + " "
         self.prefix = []
