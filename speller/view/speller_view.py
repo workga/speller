@@ -14,9 +14,8 @@ from PIL import Image, ImageTk
 
 from speller.session.flashing_strategy import FlashingListType
 from speller.session.state_manager import IStateManager
-from speller.config import ConfigParams
 
-from speller.settings import FilesSettings, StrategySettings
+from speller.settings import FilesSettings, StrategySettings, ViewSettings
 
 class Color(StrEnum):
     DARK_GREY = '#D9D9D9'
@@ -24,49 +23,34 @@ class Color(StrEnum):
     WHITE = '#FFFFFF'
     BLACK = '#000000'
 
-    RED = '#FF0000'
-
-class Size(Enum):
-    SCREEN_WIDTH = 1024
-    SCREEN_HEIGHT = 768
-
-    WIDTH_LEFT = 352
-    WIDTH_RIGHT = 273
-    HEIGHT_UP = 234
-    HEIGHT_DOWN = 352
-
-    WIDTH_MIDDLE = 10
-    HEIGHT_MIDDLE = 10
-
-    @classmethod
-    def total_width(cls) -> int:
-        return cls.WIDTH_LEFT.value + cls.WIDTH_MIDDLE.value + cls.WIDTH_RIGHT.value
-    
-    @classmethod
-    def total_height(cls) -> int:
-        return cls.HEIGHT_UP.value + cls.HEIGHT_MIDDLE.value + cls.HEIGHT_DOWN.value
-        
+    RED = '#FF0000'        
 
 
 logger = logging.getLogger(__name__)
 
 
-class ISpellerWindow(abc.ABC):
+class ISpellerView(abc.ABC):
     @abc.abstractmethod
     def run(self) -> None:
         pass
 
 
-class SpellerWindow(ISpellerWindow):
+class SpellerView(ISpellerView):
     _SCREEN_WIDTH = 1920 - 120
     _SCREEN_HEIGHT = 1080 - 80
     _FULLSCREEN = True
 
-    def __init__(self, state_manager: IStateManager, strategy_settings: StrategySettings, files_settings: FilesSettings):
+    def __init__(
+        self,
+        state_manager: IStateManager,
+        strategy_settings: StrategySettings,
+        files_settings: FilesSettings,
+        view_settings: ViewSettings,
+    ):
         self._state_manager = state_manager
         self._strategy_settings = strategy_settings
         self._files_settings = files_settings
-        self._config = ConfigParams()
+        self._view_settings = view_settings
         self._initialize_window()
 
     def _load_images(self, imagename: str, scale: float = 1) -> ImageTk.PhotoImage:
@@ -99,7 +83,7 @@ class SpellerWindow(ISpellerWindow):
         self._frame_pad = 10
         self._field_pad = 20
 
-        self._font = font.Font(family='Inconsolata', size=14)
+        self._font = font.Font(family='Inconsolata', size=self._view_settings.font_size)
 
         self._input_field_text_max_width = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
         self._input_field_text = ''
@@ -153,14 +137,14 @@ class SpellerWindow(ISpellerWindow):
             self._keyboard_frame.columnconfigure(i, weight=1)
 
         for i, j in product(range(size), range(size)):
-            image = self._load_images(pattern.format(i, j), self._files_settings.keyboard_items_scale)
+            image = self._load_images(pattern.format(i, j), self._view_settings.keyboard_items_scale)
             self._keyboard_images[i][j] = image
             label = Label(self._keyboard_frame, image=image)
             self._keyboard_labels[i][j] = label
             label.grid(row=i, column=j)
 
         self._keyboard_flash_image = self._load_images(
-            self._files_settings.keyboard_flash_item_filename, self._files_settings.keyboard_items_scale
+            self._files_settings.keyboard_flash_item_filename, self._view_settings.keyboard_items_scale
         )
 
     def _handle_start_btn(self):
@@ -211,7 +195,7 @@ class SpellerWindow(ISpellerWindow):
         self._window.mainloop()
 
     def _update_loop(self):
-        self._window.after(self._config.view_update_interval, self._update_loop)
+        self._window.after(self._view_settings.update_interval_ms, self._update_loop)
 
         if self._state_manager.shutdown_event.is_set():
             self._finish()

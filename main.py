@@ -17,8 +17,8 @@ from speller.session.flashing_strategy import SquareRowColumnFlashingStrategy
 from speller.session.sequence_handler import SequenceHandler
 from speller.session.speller_runner import ISessionHandler, SpellerRunner
 from speller.session.state_manager import StateManager
-from speller.settings import FilesSettings, StrategySettings
-from speller.view.speller_window import SpellerWindow
+from speller.settings import FilesSettings, StrategySettings, ViewSettings
+from speller.view.speller_view import SpellerView
 
 
 logger = logging.getLogger(__name__)
@@ -35,10 +35,11 @@ def register_shutdown_event() -> Event:
 
 
 def build_runner() -> Callable[[], None]:
-    logging.basicConfig(level='INFO')
+    logging.basicConfig(level='DEBUG')
 
     strategy_settings = StrategySettings()
     files_settings = FilesSettings()
+    view_settings = ViewSettings()
     # data_queue = Queue()
     
     shutdown_event = register_shutdown_event()
@@ -49,7 +50,7 @@ def build_runner() -> Callable[[], None]:
     # data_streamer = DataStreamer(data_collector=data_collector, data_queue=data_queue)
 
     # epoch_getter = QueueEpochGetter(data_queue=data_queue)
-    epoch_getter = EpochGetter(data_collector=data_collector)
+    epoch_getter = EpochGetter(data_collector=data_collector, strategy_settings=strategy_settings)
     # classifier = Classifier()
     classifier = StubClassifier()
     flashing_strategy = SquareRowColumnFlashingStrategy(settings=strategy_settings)
@@ -58,13 +59,19 @@ def build_runner() -> Callable[[], None]:
     chat_gpt_predictor = ChatGptPredictor()
     suggestions_getter = SuggestionsGetter(t9_predictor=t9_predictor, chat_gpt_predictor=chat_gpt_predictor)
     state_manager = StateManager(suggestions_getter=suggestions_getter, shutdown_event=shutdown_event)
-    sequence_handler = SequenceHandler(epoch_getter=epoch_getter, classifier=classifier, flashing_strategy=flashing_strategy, state_manager=state_manager)
+    sequence_handler = SequenceHandler(
+        epoch_getter=epoch_getter,
+        classifier=classifier,
+        flashing_strategy=flashing_strategy,
+        state_manager=state_manager,
+        strategy_settings=strategy_settings,
+    )
 
     command_decoder = CommandDecoder()
     speller_runner = SpellerRunner(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager)
 
-    speller_window = SpellerWindow(
-        state_manager=state_manager, strategy_settings=strategy_settings, files_settings=files_settings
+    speller_view = SpellerView(
+        state_manager=state_manager, strategy_settings=strategy_settings, files_settings=files_settings, view_settings=view_settings
     )
 
     def run_speller():
@@ -74,7 +81,7 @@ def build_runner() -> Callable[[], None]:
         # data_streamer_thread.start()
         speller_runner_thread.start()
 
-        speller_window.run()
+        speller_view.run()
 
         while True:
             logger.info("runner: waiting threads...")

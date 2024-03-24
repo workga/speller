@@ -5,7 +5,7 @@ from typing import Iterator, Sequence
 
 from speller.data_aquisition.data_collector import DataSampleType, IDataCollector, ISyncDataCollector
 from speller.data_aquisition.data_streamer import IDataStreamer
-from speller.config import ConfigParams
+from speller.settings import StrategySettings
 
 
 logger = logging.getLogger(__name__)
@@ -49,24 +49,24 @@ class QueueEpochGetter(IEpochGetter):
             return
   
 class EpochGetter(IEpochGetter):
-    def __init__(self, data_collector: ISyncDataCollector):
-        self._config = ConfigParams()
+    def __init__(self, data_collector: ISyncDataCollector, strategy_settings: StrategySettings):
         self._data_collector = data_collector
+        self._strategy_settings = strategy_settings
 
     def get_epochs(self, number_of_epoches: int) -> Iterator[EpochType]:
         logger.debug("EpochGetter: start yielding %s epochs", number_of_epoches)
-        number_of_samples = self._config.epoch_size + (number_of_epoches - 1) * self._config.epoch_interval
+        number_of_samples = self._strategy_settings.epoch_size_samples + (number_of_epoches - 1) * self._strategy_settings.epoch_interval_samples
         sample_generator = self._data_collector.collect(number_of_samples)
         
         current_epoch = []
-        for _ in range(self._config.epoch_size):
+        for _ in range(self._strategy_settings.epoch_size_samples):
             current_epoch.append(next(sample_generator))
         logger.debug("EpochGetter: yield epoch")
         yield current_epoch
 
         for _ in range(number_of_epoches - 1):
-            current_epoch = current_epoch[self._config.epoch_interval:]
-            for _ in range(self._config.epoch_interval):
+            current_epoch = current_epoch[self._strategy_settings.epoch_interval_samples:]
+            for _ in range(self._strategy_settings.epoch_interval_samples):
                 current_epoch.append(next(sample_generator))
             logger.debug("EpochGetter: yield epoch")
             yield current_epoch
