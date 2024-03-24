@@ -62,4 +62,5 @@ class StubDataCollectorSettings(BaseSettings):
     ms_per_sample: Literal[4] = 4
 
 class UnicornDataCollectorSettings(BaseSettings):
+    single_batch: bool = True
     batch_size: int = 50

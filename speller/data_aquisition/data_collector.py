@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import logging
 import random
 import time
-from typing import Iterator, Sequence, cast
+from typing import Iterable, Iterator, Sequence, cast
 from speller.settings import StubDataCollectorSettings, UnicornDataCollectorSettings
 from unapi import Unicorn
 
@@ -61,15 +61,23 @@ class UnicornDataCollector(IDataCollector):
         samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._settings.batch_size))
         for sample in samples:
             yield [sample[i] for i in self.eeg_indexes]
+
+    def _samples_from_batch(self, batch_size: int) -> Iterator[DataSampleType]:
+        flatten_batch = self.bci.getData(self.handle_id, batch_size)
+        for i in range(batch_size):
+            yield flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
+    
+    def _eeg_sample(self, sample: DataSampleType) -> DataSampleType:
+        return [sample[i] for i in self.eeg_indexes]
     
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
-        with self._start_acquisition():
+        with self._start_acquisition():            
+            batch_size = number_of_samples if self._settings.single_batch else self._settings.batch_size
+
             counter = 0
             while True:
-                flatten_batch = self.bci.getData(self.handle_id, self._settings.batch_size)
-                samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._settings.batch_size))
-                for sample in samples:
-                    yield [sample[i] for i in self.eeg_indexes]
+                for sample in self._samples_from_batch(batch_size):
+                    yield self._eeg_sample(sample)
                     counter +=1
                     if counter >= number_of_samples:
                         return
