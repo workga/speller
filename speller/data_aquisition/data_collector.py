@@ -4,6 +4,7 @@ import logging
 from threading import Event
 import time
 from typing import Iterator, Sequence, cast
+from speller.settings import StubDataCollectorSettings, UnicornDataCollectorSettings
 from unapi import Unicorn
 
 
@@ -20,27 +21,25 @@ class IDataCollector(abc.ABC):
 
 
 class StubDataCollector(IDataCollector):
-    _SLEEP_S = 0.004
-    _SAMPLES_COUNT = 4000
-
-    def __init__(self, shutdown_event: Event):
+    def __init__(self, shutdown_event: Event, settings: StubDataCollectorSettings):
         self._shutdown_event = shutdown_event
+        self._settings = settings
         self._counter = 0
 
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         for _ in range(number_of_samples):
             yield (self._counter,) * 8
-            time.sleep(self._SLEEP_S)
+            time.sleep(self._settings.sleep_ms / 1000)
             self._counter += 1
         logger.info("SyncStubDataCollector: number_of_samples exceeded")
 
 
-class SyncUnicornDataCollector(IDataCollector): 
+class UnicornDataCollector(IDataCollector): 
     _NAMES_OF_EEG_CHANNELS = [f'EEG {i}' for i in range(1, 9)]
-    _BATCH_SIZE = 50
 
-    def __init__(self, shutdown_event: Event):
+    def __init__(self, shutdown_event: Event, settings: UnicornDataCollectorSettings):
         self._shutdown_event = shutdown_event
+        self._settings = settings
         
         self.bci = Unicorn()
 
@@ -63,8 +62,8 @@ class SyncUnicornDataCollector(IDataCollector):
         self.bci.stopAcquisition(self.handle_id)
 
     def _get_samples(self) -> Iterator[DataSampleType]:
-        flatten_batch = self.bci.getData(self.handle_id, self._BATCH_SIZE)
-        samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
+        flatten_batch = self.bci.getData(self.handle_id, self._settings.batch_size)
+        samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._settings.batch_size))
         for sample in samples:
             yield [sample[i] for i in self.eeg_indexes]
     
@@ -72,8 +71,8 @@ class SyncUnicornDataCollector(IDataCollector):
         with self._start_acquisition():
             counter = 0
             while True:
-                flatten_batch = self.bci.getData(self.handle_id, self._BATCH_SIZE)
-                samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._BATCH_SIZE))
+                flatten_batch = self.bci.getData(self.handle_id, self._settings.batch_size)
+                samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._settings.batch_size))
                 for sample in samples:
                     yield [sample[i] for i in self.eeg_indexes]
                     counter +=1

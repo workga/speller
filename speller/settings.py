@@ -43,7 +43,16 @@ class ViewSettings(BaseSettings):
 
     screen_width: int = 1920 - 120
     screen_height: int = 1080 - 80
-    fullscreen: bool = False
+    fullscreen: bool = True
 
 class LoggingSettings(BaseSettings):
     level: str = 'INFO'
+
+class StateManagerSettings(BaseSettings):
+    max_suggestions: int = 6
+
+class StubDataCollectorSettings(BaseSettings):
+    sleep_ms: Literal[4] = 4
+
+class UnicornDataCollectorSettings(BaseSettings):
+    batch_size: int = 50

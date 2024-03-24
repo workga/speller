@@ -7,6 +7,7 @@ from speller.prediction.suggestions_getter import ISuggestionsGetter
 
 from speller.prediction.t9_predictor import T9_CHARS
 from speller.session.flashing_strategy import FlashingListType
+from speller.settings import StateManagerSettings
 
 
 logger = logging.getLogger(__name__)
@@ -77,15 +78,14 @@ class IStateManager(abc.ABC):
     
 
 class StateManager(IStateManager):
-    _MAX_SUGGESTIONS = 6
-
-    def __init__(self, suggestions_getter: ISuggestionsGetter, shutdown_event: Event):
+    def __init__(self, suggestions_getter: ISuggestionsGetter, shutdown_event: Event, settings: StateManagerSettings):
         self._suggestions_getter = suggestions_getter
+        self.shutdown_event = shutdown_event
+        self._settings = settings
         self._history: list[HistoryState] = []
         self._initialize()
         self.info = ""
         self.is_session_running: Event = Event()
-        self.shutdown_event = shutdown_event
 
     def _initialize(self) -> None:
         self.text = ""
@@ -138,7 +138,7 @@ class StateManager(IStateManager):
         self.suggestions = previous_state.suggestions
     
     def _update_suggestions(self):
-        self.suggestions = self._suggestions_getter.get_suggestions(self.text, self.prefix, self._MAX_SUGGESTIONS)
+        self.suggestions = self._suggestions_getter.get_suggestions(self.text, self.prefix, self._settings.max_suggestions)
     
     def t9_input(self, charset_number: int) -> None:
         self.info = f'[ВВОД] T9 {T9_CHARS[charset_number].upper()}'

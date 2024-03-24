@@ -4,7 +4,7 @@ from threading import Event
 from independency import Container, ContainerBuilder
 from independency.container import Dependency
 
-from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, SyncUnicornDataCollector
+from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
@@ -15,7 +15,7 @@ from speller.session.flashing_strategy import IFlashingStrategy, SquareRowColumn
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
 from speller.session.speller_runner import SpellerRunner
 from speller.session.state_manager import IStateManager, StateManager
-from speller.settings import FilesSettings, LoggingSettings, StrategySettings, ViewSettings
+from speller.settings import FilesSettings, LoggingSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
 from speller.view.speller_view import SpellerView
 
 
@@ -42,13 +42,16 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(FilesSettings, lambda: FilesSettings())
     builder.singleton(ViewSettings, lambda: ViewSettings())
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
+    builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
+    builder.singleton(StubDataCollectorSettings, lambda: StubDataCollectorSettings())
+    builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
 
     if stub:
         builder.singleton(IDataCollector, StubDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
         builder.singleton(IClassifier, StubClassifier)
         builder.singleton(IT9Predictor, StubT9Predictor)
     else:
-        builder.singleton(IDataCollector, SyncUnicornDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
+        builder.singleton(IDataCollector, UnicornDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
         builder.singleton(IClassifier, Classifier)
         builder.singleton(IT9Predictor, T9Predictor)
 
