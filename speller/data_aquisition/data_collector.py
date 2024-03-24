@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import logging
 from threading import Event
 import time
-from typing import Any, Iterator, Sequence, cast
+from typing import Iterator, Sequence, cast
 from unapi import Unicorn
 
 
@@ -15,35 +15,16 @@ DataSampleType = Sequence[float]
 
 class IDataCollector(abc.ABC):
     @abc.abstractmethod
-    def collect(self) -> Iterator[DataSampleType]:
-        pass
-
-class ISyncDataCollector(abc.ABC):
-    @abc.abstractmethod
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         pass
+
 
 class StubDataCollector(IDataCollector):
     _SLEEP_S = 0.004
     _SAMPLES_COUNT = 4000
+
     def __init__(self, shutdown_event: Event):
         self._shutdown_event = shutdown_event
-
-    def collect(self) -> Iterator[DataSampleType]:
-        counter = 0
-        while not self._shutdown_event.is_set():
-            yield (counter,) * 8
-            time.sleep(self._SLEEP_S)
-            counter += 1
-            if counter >= self._SAMPLES_COUNT:
-                logger.info("StubDataCollector: _SAMPLES_COUNT exceeded")
-                return
-
-        logger.info(f"StubDataCollector: shutdown_event was set at {counter}")
-
-class SyncStubDataCollector(ISyncDataCollector, StubDataCollector):
-    def __init__(self, shutdown_event: Event):
-        super().__init__(shutdown_event)
         self._counter = 0
 
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
@@ -54,7 +35,7 @@ class SyncStubDataCollector(ISyncDataCollector, StubDataCollector):
         logger.info("SyncStubDataCollector: number_of_samples exceeded")
 
 
-class UnicornDataCollector(IDataCollector): 
+class SyncUnicornDataCollector(IDataCollector): 
     _NAMES_OF_EEG_CHANNELS = [f'EEG {i}' for i in range(1, 9)]
     _BATCH_SIZE = 50
 
@@ -87,16 +68,6 @@ class UnicornDataCollector(IDataCollector):
         for sample in samples:
             yield [sample[i] for i in self.eeg_indexes]
     
-    def collect(self) -> Iterator[DataSampleType]:
-        with self._start_acquisition():
-            while not self._shutdown_event.is_set():
-                yield from self._get_samples()
-            logger.info('UnicornDataCollector: shutdown_event was set')
-
-    def __del__(self):
-        self.bci.closeDevice(self.handle_id)
-
-class SyncUnicornDataCollector(ISyncDataCollector, UnicornDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         with self._start_acquisition():
             counter = 0
@@ -109,6 +80,8 @@ class SyncUnicornDataCollector(ISyncDataCollector, UnicornDataCollector):
                     if counter >= number_of_samples:
                         return
 
+    def __del__(self):
+        self.bci.closeDevice(self.handle_id)
 
 
 # s = Event()

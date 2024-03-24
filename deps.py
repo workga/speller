@@ -4,7 +4,7 @@ from threading import Event
 from independency import Container, ContainerBuilder
 from independency.container import Dependency
 
-from speller.data_aquisition.data_collector import ISyncDataCollector, SyncStubDataCollector, SyncUnicornDataCollector
+from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, SyncUnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
@@ -44,11 +44,11 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
 
     if stub:
-        builder.singleton(ISyncDataCollector, SyncStubDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
+        builder.singleton(IDataCollector, StubDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
         builder.singleton(IClassifier, StubClassifier)
         builder.singleton(IT9Predictor, StubT9Predictor)
     else:
-        builder.singleton(ISyncDataCollector, SyncUnicornDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
+        builder.singleton(IDataCollector, SyncUnicornDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
         builder.singleton(IClassifier, Classifier)
         builder.singleton(IT9Predictor, T9Predictor)
 
