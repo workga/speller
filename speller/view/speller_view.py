@@ -136,6 +136,7 @@ class SpellerView:
         self._keyboard_flash_image = self._load_images(
             self._files_settings.keyboard_flash_item_filename, self._view_settings.keyboard_items_scale
         )
+        self._keyboard_flashing_list = set()
 
     def _handle_start_btn(self):
         if self._start_btn_text.get() == 'Start':
@@ -173,12 +174,12 @@ class SpellerView:
             self._info_field.config(text= self._info_field_text)
 
     def _update_keyboard(self, flashing_list: FlashingListType) -> None:
-        size = self._strategy_settings.keyboard_size
-        for i, j in product(range(size), range(size)):
-            if (i, j) in flashing_list:
-                self._keyboard_labels[i][j].configure(image=self._keyboard_flash_image)
-            else:
-                self._keyboard_labels[i][j].configure(image=self._keyboard_images[i][j])
+        flashing_list = set(flashing_list)
+        for i, j in flashing_list - self._keyboard_flashing_list:
+            self._keyboard_labels[i][j].configure(image=self._keyboard_flash_image)
+        for i, j in self._keyboard_flashing_list - flashing_list:
+            self._keyboard_labels[i][j].configure(image=self._keyboard_images[i][j])
+        self._keyboard_flashing_list = flashing_list
 
     def run(self) -> None:
         self._update_loop()

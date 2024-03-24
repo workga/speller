@@ -45,7 +45,10 @@ class SequenceHandler(ISequenceHandler):
         
         self._run_state_updater(flashing_sequence)
 
+        # start = time.monotonic()
         probabilities = [self._classifier.classify(epoch) for epoch in epoch_generator]
+        # print('Epochs and classifier waiting: elapsed {}'.format(time.monotonic() - start))
+
         if len(probabilities) < len(flashing_sequence):
             raise RuntimeError("SequnceHandler: run out of epochs")
 
@@ -53,6 +56,7 @@ class SequenceHandler(ISequenceHandler):
         return self._flashing_strategy.predict_item_position(flashing_sequence, probabilities)
     
     def _task(self, flashing_sequence: FlashingSequenceType):
+        # start = time.monotonic()
         logger.debug("SequnceHandler: running state updater")
         time.sleep(self._strategy_settings.epoch_baseline_ms / 1000)
         for flashing_list in flashing_sequence:
@@ -60,6 +64,7 @@ class SequenceHandler(ISequenceHandler):
             time.sleep(self._strategy_settings.flash_duration_ms / 1000)
             self._state_manager.reset_flashing_list()
             time.sleep(self._strategy_settings.break_duration_ms / 1000)
+        # print('Flashing waiting: elapsed {}'.format(time.monotonic() - start))
     
     def _run_state_updater(self, flashing_sequence: FlashingSequenceType):
         if self._future:

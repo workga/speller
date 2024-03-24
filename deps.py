@@ -47,11 +47,11 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
 
     if stub:
-        builder.singleton(IDataCollector, StubDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
+        builder.singleton(IDataCollector, StubDataCollector)
         builder.singleton(IClassifier, StubClassifier)
         builder.singleton(IT9Predictor, StubT9Predictor)
     else:
-        builder.singleton(IDataCollector, UnicornDataCollector, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT.value))
+        builder.singleton(IDataCollector, UnicornDataCollector)
         builder.singleton(IClassifier, Classifier)
         builder.singleton(IT9Predictor, T9Predictor)
 

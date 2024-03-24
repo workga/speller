@@ -32,16 +32,18 @@ class SquareRowColumnFlashingStrategy(IFlashingStrategy):
     def get_flashing_sequence(self) -> FlashingSequenceType:
         rows_numbers = list(range(self._settings.keyboard_size))
         columns_numbers = list(range(self._settings.keyboard_size))
-        random.shuffle(rows_numbers)
-        random.shuffle(columns_numbers)
+
         sequence = []
-        for row_number, column_number in zip(rows_numbers, columns_numbers):
-            sequence.append(
-                tuple((row_number, j) for j in range(self._settings.keyboard_size))
-            )
-            sequence.append(
-                tuple((i, column_number) for i in range(self._settings.keyboard_size))
-            )
+        for _ in range(self._settings.repetitions_count):
+            random.shuffle(rows_numbers)
+            random.shuffle(columns_numbers)
+            for row_number, column_number in zip(rows_numbers, columns_numbers):
+                sequence.append(
+                    tuple((row_number, j) for j in range(self._settings.keyboard_size))
+                )
+                sequence.append(
+                    tuple((i, column_number) for i in range(self._settings.keyboard_size))
+                )
 
         return sequence
     

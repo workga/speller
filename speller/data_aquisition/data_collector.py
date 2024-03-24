@@ -1,7 +1,7 @@
 import abc
 from contextlib import contextmanager
 import logging
-from threading import Event
+import random
 import time
 from typing import Iterator, Sequence, cast
 from speller.settings import StubDataCollectorSettings, UnicornDataCollectorSettings
@@ -21,24 +21,19 @@ class IDataCollector(abc.ABC):
 
 
 class StubDataCollector(IDataCollector):
-    def __init__(self, shutdown_event: Event, settings: StubDataCollectorSettings):
-        self._shutdown_event = shutdown_event
+    def __init__(self, settings: StubDataCollectorSettings):
         self._settings = settings
-        self._counter = 0
 
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
+        time.sleep(self._settings.ms_per_sample * number_of_samples / 1000)
         for _ in range(number_of_samples):
-            yield (self._counter,) * 8
-            time.sleep(self._settings.sleep_ms / 1000)
-            self._counter += 1
-        logger.info("SyncStubDataCollector: number_of_samples exceeded")
+            yield (random.random()) * 8
 
 
 class UnicornDataCollector(IDataCollector): 
     _NAMES_OF_EEG_CHANNELS = [f'EEG {i}' for i in range(1, 9)]
 
-    def __init__(self, shutdown_event: Event, settings: UnicornDataCollectorSettings):
-        self._shutdown_event = shutdown_event
+    def __init__(self, settings: UnicornDataCollectorSettings):
         self._settings = settings
         
         self.bci = Unicorn()

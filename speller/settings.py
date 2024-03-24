@@ -1,7 +1,7 @@
 from functools import cached_property
 from pathlib import Path
 from typing import Literal
-from pydantic import ValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 def samples_to_ms(samples: int) -> int:
@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 2
+    repetitions_count: int = 1
 
     flash_duration_ms: int = 76
     break_duration_ms: int = 100
@@ -26,6 +26,13 @@ class StrategySettings(BaseSettings):
     def value_is_multiple_of_four(cls, v: int, info: ValidationInfo) -> int:
         assert v % 4 == 0, f'{info.field_name} must be a multiple of 4!'
         return v
+    
+    @model_validator(mode='after')
+    def epoch_is_longer_than_flashing(self) -> 'StrategySettings':
+        epoch_duration = samples_to_ms(self.epoch_size_samples)
+        flashing_duration = self.flash_duration_ms + self.break_duration_ms
+        assert epoch_duration > flashing_duration, f'epoch duration must be greater than flashing duration!'
+        return self
 
     @cached_property
     def epoch_interval_samples(self) -> int:
@@ -52,7 +59,7 @@ class StateManagerSettings(BaseSettings):
     max_suggestions: int = 6
 
 class StubDataCollectorSettings(BaseSettings):
-    sleep_ms: Literal[4] = 4
+    ms_per_sample: Literal[4] = 4
 
 class UnicornDataCollectorSettings(BaseSettings):
     batch_size: int = 50
