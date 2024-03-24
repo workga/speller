@@ -1,4 +1,5 @@
 import abc
+from collections import deque
 import copy
 from enum import Enum, StrEnum
 from itertools import product
@@ -7,7 +8,7 @@ import os
 import textwrap
 from tkinter import Button, Frame, Label, StringVar, Tk, font
 
-from typing import Any
+from typing import Any, Sequence
 
 from PIL import Image, ImageTk
 
@@ -78,11 +79,11 @@ class SpellerWindow(ISpellerWindow):
 
     def _initialize_window(self):
         self._window = Tk()
-        self._window.protocol("WM_DELETE_WINDOW", self._finish)
+        self._window.protocol("WM_DELETE_WINDOW", self._shutdown)
         if self._FULLSCREEN:
             self._window.attributes("-fullscreen", True)
         else:
-            self._window.geometry(f"{self._SCREEN_WIDTH}x{self._SCREEN_HEIGHT}")
+            self._window.geometry(f"{self._SCREEN_HEIGHT}x{self._SCREEN_HEIGHT}")
 
         self._main_frame = Frame(self._window, bg=Color.LIGHT_GRAY)
         self._main_frame.pack(fill='both', expand=True)
@@ -99,32 +100,40 @@ class SpellerWindow(ISpellerWindow):
         self._field_pad = 20
 
         self._font = font.Font(family='Inconsolata', size=14)
-        self._input_field_text_width = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
-        self._input_field_text = 'Здесь появится вводимый текст'
+
+        self._input_field_text_max_width = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
+        self._input_field_text = ''
+
+        self._suggestions_field_text_max_width = int((0.4*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
+        self._suggestions_field_list = []
+
+        self._info_field_text_max_height = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.metrics('linespace'))
+        self._info_field_text_height = 0
+        self._info_field_text = ''
 
         self._input_frame = Frame(self._speller_frame, bg=Color.WHITE)
-        self._input_frame.grid(row=0, column=0, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
+        self._input_frame.grid(row=0, column=0, padx=(0, self._frame_pad), pady=(0, self._frame_pad), sticky="nsew")
         self._input_title = Label(self._input_frame, text='ВВОД', bg=Color.WHITE, fg=Color.BLACK, font=self._font)
         self._input_title.pack(fill='x')
-        self._input_field = Label(self._input_frame, text=self._input_field_text, anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
+        self._input_field = Label(self._input_frame, text='_', anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
         self._input_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
         self._suggestions_frame = Frame(self._speller_frame, bg=Color.WHITE)
-        self._suggestions_frame.grid(row=0, column=1, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
+        self._suggestions_frame.grid(row=0, column=1, padx=(self._frame_pad, 0), pady=(0, self._frame_pad), sticky="nsew")
         self._suggestions_title = Label(self._suggestions_frame, text='ВАРИАНТЫ', bg=Color.WHITE, fg=Color.BLACK, font=self._font)
         self._suggestions_title.pack(fill='x')
-        self._suggestions_field = Label(self._suggestions_frame, text='', bg=Color.LIGHT_GRAY, fg=Color.BLACK)
+        self._suggestions_field = Label(self._suggestions_frame, text='', anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
         self._suggestions_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
         self._keyboard_frame = Frame(self._speller_frame, bg=Color.BLACK)
-        self._keyboard_frame.grid(row=1, column=0, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
+        self._keyboard_frame.grid(row=1, column=0, padx=(0, self._frame_pad), pady=(self._frame_pad, 0), sticky="nsew")
         self._initialize_keyboard()
 
         self._info_frame = Frame(self._speller_frame, bg=Color.WHITE)
-        self._info_frame.grid(row=1, column=1, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
+        self._info_frame.grid(row=1, column=1, padx=(self._frame_pad, 0), pady=(self._frame_pad, 0), sticky="nsew")
         self._info_title = Label(self._info_frame, text='ИНФОРМАЦИЯ', bg=Color.WHITE, fg=Color.BLACK, font=self._font)
         self._info_title.pack(fill='x')
-        self._info_field = Label(self._info_frame, text='', bg=Color.LIGHT_GRAY, fg=Color.BLACK)
+        self._info_field = Label(self._info_frame, text='', anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
         self._info_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
 
@@ -132,14 +141,6 @@ class SpellerWindow(ISpellerWindow):
         self._start_btn_text.set("Start")
         self._start_btn = Button(self._speller_frame, textvariable=self._start_btn_text, command=self._handle_start_btn)
         self._start_btn.grid(row=self._config.number_of_rows + 1, column=0, columnspan=self._config.number_of_columns)
-
-    def _handle_start_btn(self):
-        if self._start_btn_text.get() == 'Start':
-            self._state_manager.start_session()
-            self._start_btn_text.set('Stop')
-        else:
-            self._state_manager.finish_session()
-            self._start_btn_text.set('Start')
 
     def _initialize_keyboard(self) -> None:
         pattern = self._files_settings.keyboard_items_pattern
@@ -162,10 +163,40 @@ class SpellerWindow(ISpellerWindow):
             self._files_settings.keyboard_flash_item_filename, self._files_settings.keyboard_items_scale
         )
 
+    def _handle_start_btn(self):
+        if self._start_btn_text.get() == 'Start':
+            self._state_manager.start_session()
+            self._start_btn_text.set('Stop')
+        else:
+            self._state_manager.finish_session()
+            self._start_btn_text.set('Start')
 
-    def _set_input_field_text(self, text: str) -> None:
-        lines = textwrap.wrap(text, width=self._input_field_text_width)
-        self._input_field.config(text='\n'.join(lines))
+    def _wrap_text(self, text: str, width: int) -> str:
+        return '\n'.join(textwrap.wrap(text, width=width))
+
+    def _update_input(self, full_text: str) -> None:
+        if self._input_field_text != full_text:
+            self._input_field_text = full_text
+            wrapped_text = self._wrap_text(full_text + '_', self._input_field_text_max_width)
+            self._input_field.config(text=wrapped_text)
+
+    def _update_suggestions(self, suggestions: Sequence[str]) -> None:
+        if self._suggestions_field_list != suggestions:
+            self._suggestions_field_list = suggestions
+            suggestions_text = '\n'.join(f'{i}) {suggestion}' for i, suggestion in enumerate(suggestions, start=1))
+            self._suggestions_field.config(text=suggestions_text)
+
+    def _update_info(self, info: str) -> None:
+        if not self._info_field_text.endswith(info):
+            if self._info_field_text:
+                self._info_field_text = '\n'.join((self._info_field_text, info))
+            else:
+                self._info_field_text = info
+
+            self._info_field_text_height += 1
+            if self._info_field_text_height >= self._info_field_text_max_height:
+                self._info_field_text = self._info_field_text.split('\n', 1)[1]
+            self._info_field.config(text= self._info_field_text)
 
     def _update_keyboard(self, flashing_list: FlashingListType) -> None:
         size = self._strategy_settings.keyboard_size
@@ -180,19 +211,23 @@ class SpellerWindow(ISpellerWindow):
         self._window.mainloop()
 
     def _update_loop(self):
+        self._window.after(self._config.view_update_interval, self._update_loop)
+
         if self._state_manager.shutdown_event.is_set():
-            self._window.destroy()
+            self._finish()
             return
         
         state = self._state_manager.get_state()
-
-        if self._input_field_text != state.full_text:
-            self._input_field_text = state.full_text
-            self._set_input_field_text(state.full_text + '_')
-
         self._update_keyboard(state.flashing_list)
-        self._window.after(self._config.view_update_interval, self._update_loop)
+
+        self._update_input(state.full_text)
+        self._update_suggestions(state.suggestions)
+        self._update_info(state.info)
+
 
     def _finish(self) -> None:
-        self._state_manager.shutdown()
         self._window.destroy()
+
+    def _shutdown(self) -> None:
+        self._state_manager.shutdown()
+        self._finish()
