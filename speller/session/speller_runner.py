@@ -10,13 +10,7 @@ from speller.session.state_manager import IStateManager
 logger = logging.getLogger(__name__)
 
 
-class ISessionHandler(abc.ABC):
-    @abc.abstractmethod
-    def handle_session(self) -> None:
-        pass
-
-
-class SpellerRunner(ISessionHandler):
+class SpellerRunner:
     def __init__(
         self,
         sequence_handler: ISequenceHandler,

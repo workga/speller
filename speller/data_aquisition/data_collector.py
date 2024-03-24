@@ -42,8 +42,8 @@ class StubDataCollector(IDataCollector):
         logger.info(f"StubDataCollector: shutdown_event was set at {counter}")
 
 class SyncStubDataCollector(ISyncDataCollector, StubDataCollector):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, shutdown_event: Event):
+        super().__init__(shutdown_event)
         self._counter = 0
 
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:

@@ -31,8 +31,6 @@ class StrategySettings(BaseSettings):
     def epoch_interval_samples(self) -> int:
         return (self.flash_duration_ms + self.break_duration_ms) // 4
 
-
-
 class FilesSettings(BaseSettings):
     images_dir: Path = Path("./static")
     keyboard_items_pattern: str = 'keyboard_item_{}_{}'
@@ -42,3 +40,6 @@ class ViewSettings(BaseSettings):
     update_interval_ms: int = 1
     font_size: int = 14
     keyboard_items_scale: float = 0.8
+
+class LoggingSettings(BaseSettings):
+    level: str = 'INFO'

@@ -29,13 +29,7 @@ class Color(StrEnum):
 logger = logging.getLogger(__name__)
 
 
-class ISpellerView(abc.ABC):
-    @abc.abstractmethod
-    def run(self) -> None:
-        pass
-
-
-class SpellerView(ISpellerView):
+class SpellerView:
     _SCREEN_WIDTH = 1920 - 120
     _SCREEN_HEIGHT = 1080 - 80
     _FULLSCREEN = True
