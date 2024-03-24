@@ -30,10 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class SpellerView:
-    _SCREEN_WIDTH = 1920 - 120
-    _SCREEN_HEIGHT = 1080 - 80
-    _FULLSCREEN = True
-
     def __init__(
         self,
         state_manager: IStateManager,
@@ -58,10 +54,10 @@ class SpellerView:
     def _initialize_window(self):
         self._window = Tk()
         self._window.protocol("WM_DELETE_WINDOW", self._shutdown)
-        if self._FULLSCREEN:
+        if self._view_settings.fullscreen:
             self._window.attributes("-fullscreen", True)
         else:
-            self._window.geometry(f"{self._SCREEN_HEIGHT}x{self._SCREEN_HEIGHT}")
+            self._window.geometry(f"{self._view_settings.screen_height}x{self._view_settings.screen_height}")
 
         self._main_frame = Frame(self._window, bg=Color.LIGHT_GRAY)
         self._main_frame.pack(fill='both', expand=True)
@@ -69,23 +65,23 @@ class SpellerView:
         self._speller_frame = Frame(self._main_frame, bg=Color.LIGHT_GRAY)
         self._speller_frame.place(relx=0.5, rely=0.5, anchor='center')
 
-        self._speller_frame.rowconfigure(0, minsize=0.4*self._SCREEN_HEIGHT)
-        self._speller_frame.rowconfigure(1, minsize=0.6*self._SCREEN_HEIGHT)
-        self._speller_frame.columnconfigure(0, minsize=0.6*self._SCREEN_HEIGHT)
-        self._speller_frame.columnconfigure(1, minsize=0.4*self._SCREEN_HEIGHT)
+        self._speller_frame.rowconfigure(0, minsize=0.4*self._view_settings.screen_height)
+        self._speller_frame.rowconfigure(1, minsize=0.6*self._view_settings.screen_height)
+        self._speller_frame.columnconfigure(0, minsize=0.6*self._view_settings.screen_height)
+        self._speller_frame.columnconfigure(1, minsize=0.4*self._view_settings.screen_height)
 
         self._frame_pad = 10
         self._field_pad = 20
 
         self._font = font.Font(family='Inconsolata', size=self._view_settings.font_size)
 
-        self._input_field_text_max_width = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
+        self._input_field_text_max_width = int((0.6*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
         self._input_field_text = ''
 
-        self._suggestions_field_text_max_width = int((0.4*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.measure('a'))
+        self._suggestions_field_text_max_width = int((0.4*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
         self._suggestions_field_list = []
 
-        self._info_field_text_max_height = int((0.6*self._SCREEN_HEIGHT - 2*self._field_pad) / self._font.metrics('linespace'))
+        self._info_field_text_max_height = int((0.6*self._view_settings.screen_height - 2*self._field_pad) / self._font.metrics('linespace'))
         self._info_field_text_height = 0
         self._info_field_text = ''
 

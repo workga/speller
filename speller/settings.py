@@ -41,5 +41,9 @@ class ViewSettings(BaseSettings):
     font_size: int = 14
     keyboard_items_scale: float = 0.8
 
+    screen_width: int = 1920 - 120
+    screen_height: int = 1080 - 80
+    fullscreen: bool = False
+
 class LoggingSettings(BaseSettings):
     level: str = 'INFO'
