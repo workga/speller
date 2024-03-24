@@ -19,7 +19,7 @@ def run() -> None:
     speller_runner = container.resolve(SpellerRunner)
     speller_view = container.resolve(SpellerView)
 
-    speller_runner_thread = Thread(target=speller_runner.handle_session)
+    speller_runner_thread = Thread(target=speller_runner.run)
     speller_runner_thread.start()
 
     speller_view.run()

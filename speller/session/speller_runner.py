@@ -21,27 +21,22 @@ class SpellerRunner:
         self._command_decoder = command_decoder
         self._state_manager = state_manager
 
-    def handle_session(self) -> None:
-        logger.debug("SessionHandler: wait is_session_running event")
+    def run(self) -> None:
         while True:
             if self._state_manager.is_session_running.wait(1):
-                break
+                logger.debug("SpellerRunner: start session")
+                self._handle_session()
             if self._state_manager.shutdown_event.is_set():
-                logger.info("SessionHandler: shutdown_event was set")
+                logger.info("SpellerRunner: shutdown")
                 return
 
-        logger.info("SessionHandler: start handling session")
-        logger.debug("SessionHandler: is_session_running event was set")
-        while self._state_manager.is_session_running.is_set():
+    def _handle_session(self) -> None:
+        while self._state_manager.is_session_running.is_set() and not self._state_manager.shutdown_event.is_set():
             predicted_item_position = self._sequence_handler.handle_sequence()
-            logger.debug("SessionHandler: got position=%s", predicted_item_position)
+            logger.debug("SpellerRunner: got position=%s", predicted_item_position)
             command = self._command_decoder.decode_command(predicted_item_position)
-            logger.info("SessionHandler: got command %s", command)
+            logger.info("SpellerRunner: got command %s", command)
             self._handle_command(command)
-            if self._state_manager.shutdown_event.is_set():
-                logger.info("SessionHandler: shutdown_event was set")
-                return
-        logger.info("SessionHandler: is_session_running was cleared")
 
     @singledispatchmethod
     def _handle_command(self, command: BaseCommand) -> None:
