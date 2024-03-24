@@ -24,14 +24,7 @@ def run() -> None:
 
     speller_view.run()
 
-    logger.info("Waiting SpellerRunner...")
-    while True:
-        if not speller_runner_thread.is_alive():
-            break
-        logger.info(f"SpellerRunner is still alive...")
-        sleep(1)
-
-    logger.info("SpellerRunner finished")
+    speller_runner_thread.join()
     
 
 if __name__ == "__main__":
