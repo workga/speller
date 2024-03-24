@@ -1,12 +1,10 @@
 import abc
 from functools import singledispatchmethod
 import logging
-from threading import Event
 
 from speller.session.sequence_handler import ISequenceHandler
 from speller.session.command_decoder import BaseCommand, ICommandDecoder, InputCancelCommand, InputClearCommand, InputSuggestionCommand, InputT9Command
 from speller.session.state_manager import IStateManager
-from speller.view.speller_view import ISpellerView
 
 
 logger = logging.getLogger(__name__)

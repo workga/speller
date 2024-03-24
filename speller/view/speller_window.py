@@ -1,23 +1,21 @@
 import abc
-from email.mime import image
+import copy
 from enum import Enum, StrEnum
-from functools import cached_property, partial
+from itertools import product
 import logging
 import os
-import re
 import textwrap
-from threading import Event
-from tkinter import Button, Frame, Label, Message, StringVar, Text, Tk, font
+from tkinter import Button, Frame, Label, StringVar, Tk, font
 
-import tkinter
-from turtle import bgcolor
-from typing import Callable
+from typing import Any
 
 from PIL import Image, ImageTk
 
-from speller.session.flashing_strategy import FlashingListType, FlashingSequenceType, ItemPositionType
+from speller.session.flashing_strategy import FlashingListType
 from speller.session.state_manager import IStateManager
 from speller.config import ConfigParams
+
+from speller.settings import FilesSettings, StrategySettings
 
 class Color(StrEnum):
     DARK_GREY = '#D9D9D9'
@@ -61,30 +59,22 @@ class ISpellerWindow(abc.ABC):
 class SpellerWindow(ISpellerWindow):
     _SCREEN_WIDTH = 1920 - 120
     _SCREEN_HEIGHT = 1080 - 80
-    _SCALING_FACTOR = 1
-    _IMAGES_DIR = "./static"
-    _IMAGES_NAMES = (
-        "keyboard_frame",
-        "speller_frame",
-        "flash_item",
-    )
     _FULLSCREEN = True
 
-    def __init__(self, state_manager: IStateManager):
+    def __init__(self, state_manager: IStateManager, strategy_settings: StrategySettings, files_settings: FilesSettings):
         self._state_manager = state_manager
+        self._strategy_settings = strategy_settings
+        self._files_settings = files_settings
         self._config = ConfigParams()
         self._initialize_window()
 
-    def _load_images(self) -> dict[str, ImageTk.PhotoImage]:
-        images = {}
-        for image_name in self._IMAGES_NAMES:
-            image = Image.open(os.path.join(self._IMAGES_DIR, image_name + ".png"))
-            image = image.resize(
-                (int(image.width * self._SCALING_FACTOR), int(image.height * self._SCALING_FACTOR)),
-                Image.ANTIALIAS,  # type: ignore
-            )
-            images[image_name] = ImageTk.PhotoImage(image)
-        return images  
+    def _load_images(self, imagename: str, scale: float = 1) -> ImageTk.PhotoImage:
+        image = Image.open(os.path.join(self._files_settings.images_dir, imagename + ".png"))
+        image = image.resize(
+            (int(image.width * scale), int(image.height * scale)),
+            Image.LANCZOS,
+        )
+        return ImageTk.PhotoImage(image)
 
     def _initialize_window(self):
         self._window = Tk()
@@ -92,7 +82,7 @@ class SpellerWindow(ISpellerWindow):
         if self._FULLSCREEN:
             self._window.attributes("-fullscreen", True)
         else:
-            self._window.geometry(f"{self._SCREEN_HEIGHT}x{self._SCREEN_HEIGHT}")
+            self._window.geometry(f"{self._SCREEN_WIDTH}x{self._SCREEN_HEIGHT}")
 
         self._main_frame = Frame(self._window, bg=Color.LIGHT_GRAY)
         self._main_frame.pack(fill='both', expand=True)
@@ -128,6 +118,7 @@ class SpellerWindow(ISpellerWindow):
 
         self._keyboard_frame = Frame(self._speller_frame, bg=Color.BLACK)
         self._keyboard_frame.grid(row=1, column=0, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
+        self._initialize_keyboard()
 
         self._info_frame = Frame(self._speller_frame, bg=Color.WHITE)
         self._info_frame.grid(row=1, column=1, padx=self._frame_pad, pady=self._frame_pad, sticky="nsew")
@@ -137,17 +128,52 @@ class SpellerWindow(ISpellerWindow):
         self._info_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
 
-        # self._images = self._load_images()
-        # Label(self._keyboard_frame, image=self._images['keyboard_frame']).grid(row=0, column=0)
-
         self._start_btn_text = StringVar()
         self._start_btn_text.set("Start")
-        self._start_btn = Button(self._speller_frame, textvariable=self._start_btn_text, command=self._state_manager.start_session)
-        self._start_btn.grid(row=self._config.number_of_rows + 1, column=self._config.number_of_columns - 1)
+        self._start_btn = Button(self._speller_frame, textvariable=self._start_btn_text, command=self._handle_start_btn)
+        self._start_btn.grid(row=self._config.number_of_rows + 1, column=0, columnspan=self._config.number_of_columns)
+
+    def _handle_start_btn(self):
+        if self._start_btn_text.get() == 'Start':
+            self._state_manager.start_session()
+            self._start_btn_text.set('Stop')
+        else:
+            self._state_manager.finish_session()
+            self._start_btn_text.set('Start')
+
+    def _initialize_keyboard(self) -> None:
+        pattern = self._files_settings.keyboard_items_pattern
+        size = self._strategy_settings.keyboard_size
+        self._keyboard_images: list[list[Any]] = [[None for j in range(size)] for i in range(size)] 
+        self._keyboard_labels = copy.deepcopy(self._keyboard_images)
+
+        for i in range(size):
+            self._keyboard_frame.rowconfigure(i, weight=1)
+            self._keyboard_frame.columnconfigure(i, weight=1)
+
+        for i, j in product(range(size), range(size)):
+            image = self._load_images(pattern.format(i, j), self._files_settings.keyboard_items_scale)
+            self._keyboard_images[i][j] = image
+            label = Label(self._keyboard_frame, image=image)
+            self._keyboard_labels[i][j] = label
+            label.grid(row=i, column=j)
+
+        self._keyboard_flash_image = self._load_images(
+            self._files_settings.keyboard_flash_item_filename, self._files_settings.keyboard_items_scale
+        )
+
 
     def _set_input_field_text(self, text: str) -> None:
         lines = textwrap.wrap(text, width=self._input_field_text_width)
         self._input_field.config(text='\n'.join(lines))
+
+    def _update_keyboard(self, flashing_list: FlashingListType) -> None:
+        size = self._strategy_settings.keyboard_size
+        for i, j in product(range(size), range(size)):
+            if (i, j) in flashing_list:
+                self._keyboard_labels[i][j].configure(image=self._keyboard_flash_image)
+            else:
+                self._keyboard_labels[i][j].configure(image=self._keyboard_images[i][j])
 
     def run(self) -> None:
         self._update_loop()
@@ -163,8 +189,8 @@ class SpellerWindow(ISpellerWindow):
         if self._input_field_text != state.full_text:
             self._input_field_text = state.full_text
             self._set_input_field_text(state.full_text + '_')
-        
-        self._start_btn_text.set(f"flash: {'on ' if state.flashing_list else 'off'}")
+
+        self._update_keyboard(state.flashing_list)
         self._window.after(self._config.view_update_interval, self._update_loop)
 
     def _finish(self) -> None:

@@ -4,6 +4,8 @@ import logging
 import random
 from typing import Sequence
 
+from speller.settings import StrategySettings
+
 
 logger = logging.getLogger(__name__)
     
@@ -24,21 +26,21 @@ class IFlashingStrategy(abc.ABC):
 
 
 class SquareRowColumnFlashingStrategy(IFlashingStrategy):
-    def __init__(self, size: int):
-        self._size = size
+    def __init__(self, settings: StrategySettings):
+        self._settings = settings
     
     def get_flashing_sequence(self) -> FlashingSequenceType:
-        rows_numbers = list(range(self._size))
-        columns_numbers = list(range(self._size))
+        rows_numbers = list(range(self._settings.keyboard_size))
+        columns_numbers = list(range(self._settings.keyboard_size))
         random.shuffle(rows_numbers)
         random.shuffle(columns_numbers)
         sequence = []
         for row_number, column_number in zip(rows_numbers, columns_numbers):
             sequence.append(
-                tuple((row_number, j) for j in range(self._size))
+                tuple((row_number, j) for j in range(self._settings.keyboard_size))
             )
             sequence.append(
-                tuple((i, column_number) for i in range(self._size))
+                tuple((i, column_number) for i in range(self._settings.keyboard_size))
             )
 
         return sequence

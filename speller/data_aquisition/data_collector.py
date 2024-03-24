@@ -1,6 +1,5 @@
 import abc
 from contextlib import contextmanager
-from itertools import islice
 import logging
 from threading import Event
 import time

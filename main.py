@@ -17,6 +17,7 @@ from speller.session.flashing_strategy import SquareRowColumnFlashingStrategy
 from speller.session.sequence_handler import SequenceHandler
 from speller.session.speller_runner import ISessionHandler, SpellerRunner
 from speller.session.state_manager import StateManager
+from speller.settings import FilesSettings, StrategySettings
 from speller.view.speller_window import SpellerWindow
 
 
@@ -36,7 +37,8 @@ def register_shutdown_event() -> Event:
 def build_runner() -> Callable[[], None]:
     logging.basicConfig(level='INFO')
 
-    keyboard_size = 4
+    strategy_settings = StrategySettings()
+    files_settings = FilesSettings()
     # data_queue = Queue()
     
     shutdown_event = register_shutdown_event()
@@ -50,7 +52,7 @@ def build_runner() -> Callable[[], None]:
     epoch_getter = EpochGetter(data_collector=data_collector)
     # classifier = Classifier()
     classifier = StubClassifier()
-    flashing_strategy = SquareRowColumnFlashingStrategy(size=keyboard_size)
+    flashing_strategy = SquareRowColumnFlashingStrategy(settings=strategy_settings)
     # t9_predictor = T9Predictor()
     t9_predictor = StubT9Predictor()
     chat_gpt_predictor = ChatGptPredictor()
@@ -61,7 +63,9 @@ def build_runner() -> Callable[[], None]:
     command_decoder = CommandDecoder()
     speller_runner = SpellerRunner(sequence_handler=sequence_handler, command_decoder=command_decoder, state_manager=state_manager)
 
-    speller_window = SpellerWindow(state_manager=state_manager)
+    speller_window = SpellerWindow(
+        state_manager=state_manager, strategy_settings=strategy_settings, files_settings=files_settings
+    )
 
     def run_speller():
         # data_streamer_thread = Thread(target=data_streamer.stream)
