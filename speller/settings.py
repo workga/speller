@@ -13,9 +13,9 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 1
+    repetitions_count: int = 2
 
-    flash_duration_ms: int = 76
+    flash_duration_ms: int = 60
     break_duration_ms: int = 100
 
     epoch_baseline_ms: Literal[200] = 200
@@ -37,6 +37,10 @@ class StrategySettings(BaseSettings):
     @cached_property
     def epoch_interval_samples(self) -> int:
         return (self.flash_duration_ms + self.break_duration_ms) // 4
+    
+
+class SquareSingleCharacterStrategySettings(BaseSettings):
+    min_distance: int = 2
 
 class FilesSettings(BaseSettings):
     images_dir: Path = Path("./static")

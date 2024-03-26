@@ -1,10 +1,11 @@
 import abc
 from collections import defaultdict
+from itertools import product
 import logging
 import random
 from typing import Sequence
 
-from speller.settings import StrategySettings
+from speller.settings import SquareSingleCharacterStrategySettings, StrategySettings
 
 
 logger = logging.getLogger(__name__)
@@ -60,8 +61,92 @@ class SquareRowColumnFlashingStrategy(IFlashingStrategy):
         )
 
 
-# f = SquareRowColumnFlashingStrategy(3)
+class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
+    def __init__(self, settings: SquareSingleCharacterStrategySettings, strategy_settings: StrategySettings):
+        self._settings = settings
+        self._strategy_settings = strategy_settings
+   
+    def _generate_flat_sequence(self) -> list[int]:
+        size = self._strategy_settings.keyboard_size
+        repetitions = self._strategy_settings.repetitions_count
 
-# g = f.flash()
-# for _ in range(6):
-#     print(next(g))
+        result = []
+        items = list(range(size**2))
+        for _ in range(repetitions):
+            random.shuffle(items)
+            result += items
+        
+        return result
+    
+    def get_flashing_sequence(self) -> FlashingSequenceType:
+        return [[(i // 4, i % 4)] for i in self._generate_flat_sequence()]
+    
+    def predict_item_position(self, flashing_sequence: FlashingSequenceType, probabilities: list[float]) -> ItemPositionType:
+        accumulators = [0] * (self._strategy_settings.keyboard_size ** 2)
+
+        for flashing_list, probability in zip(flashing_sequence, probabilities):
+            for i, j in flashing_list:
+                accumulators[i * 4 + j] += probability
+
+        index = max(range(len(accumulators)), key=accumulators.__getitem__)
+        return index // 4, index % 4
+    
+    # @staticmethod
+    # def generate_flat_groups(size: int, min_dist: int) -> list[list[int]]:
+    #     # Нужно научиться генерировать последовательности кратной длины с сохранением min_dist
+    #     # Сейчас слишком предсказуемо, потому что один и тот же элемент встречается только в разных половинах)
+    #     s1 = set(range(size**2))
+
+    #     center = random.sample(list(s1), size * min_dist * 2)
+    #     left_part = list(s1 - set(center[: size * min_dist]))
+    #     right_part = list(s1 - set(center[size * min_dist:]))
+
+    #     random.shuffle(left_part)
+    #     random.shuffle(right_part)
+
+    #     result = left_part + center + right_part
+    #     return [result[i * size: (i + 1) * size] for i in range(size * 2)]
+    
+    # def generate_flat_groups(self) -> list[list[int]]:
+    #     size = self._strategy_settings.keyboard_size
+    #     repetitions = self._strategy_settings.repetitions_count
+
+    #     result = []
+    #     for _ in range(repetitions):
+    #         random.shuffle(items)
+    #         result += items
+        
+    #     groups = [result[i * size: (i + 1) * size] for i in range(size * repetitions)]
+    #     random.shuffle(groups)
+    #     return groups
+    
+    # def generate_flat_groups(self) -> list[list[int]]:
+    #     # проблема - у двух выбранных групп могут быть общие элементы, тогда не понять какой элемент выбран
+    #     # нужно все таки адаптировать chekerboard, т к она дает гарантии RC но без недостатков RC
+    #     size = self._strategy_settings.keyboard_size
+    #     repetitions = self._strategy_settings.repetitions_count
+
+    #     assert size % 2 == 0, "This strategy does not work with odd keyboard sizes!"
+
+    #     even_items = [i * 4 + j for i in range(size) for j in range(size) if (i + j) % 2 == 0]
+    #     odd_items = [i * 4 + j for i in range(size) for j in range(size) if (i + j) % 2 == 1]
+
+    #     groups = []
+    #     even_groups = []
+    #     odd_groups = []
+    #     for _ in range(repetitions):
+    #         # тут шафлим чтобы сгенерировать разные группы для каждого повторения
+    #         random.shuffle(even_items)
+    #         random.shuffle(odd_items)
+    #         even_groups += [even_items[i * size: (i + 1) * size] for i in range(size // 2)]
+    #         odd_groups += [odd_items[i * size: (i + 1) * size] for i in range(size // 2)]
+    #     # тут шафлим, чтобы не было равномерного распределения
+    #     # (иначе один и тот же элемент встречается ровно один раз внутри одного повторения - предсказуемо)
+    #     # при этом сохраняется min_dist=1
+    #     random.shuffle(even_groups)
+    #     random.shuffle(odd_groups)
+        
+    #     for even_group, odd_group in zip(even_groups, odd_groups):
+    #         groups += even_group, odd_group
+
+    #     return groups
