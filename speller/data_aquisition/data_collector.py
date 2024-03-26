@@ -27,7 +27,7 @@ class StubDataCollector(IDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         time.sleep(self._settings.ms_per_sample * number_of_samples / 1000)
         for _ in range(number_of_samples):
-            yield (random.random()) * 8
+            yield (random.random(),) * 8
 
 
 class UnicornDataCollector(IDataCollector): 

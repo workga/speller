@@ -44,7 +44,7 @@ class SpellerView:
         self._initialize_window()
 
     def _load_images(self, imagename: str, scale: float = 1) -> ImageTk.PhotoImage:
-        image = Image.open(os.path.join(self._files_settings.images_dir, imagename + ".png"))
+        image = Image.open(os.path.join(self._files_settings.static_dir, imagename + ".png"))
         image = image.resize(
             (int(image.width * scale), int(image.height * scale)),
             Image.LANCZOS,

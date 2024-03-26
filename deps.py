@@ -6,6 +6,7 @@ from independency.container import Dependency
 
 from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
+from speller.data_aquisition.recorder import IRecorder, Recorder
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
@@ -44,14 +45,16 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(ViewSettings, lambda: ViewSettings())
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
     builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
-    builder.singleton(StubDataCollectorSettings, lambda: StubDataCollectorSettings())
-    builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
+
+    builder.singleton(IRecorder, Recorder)
 
     if stub:
+        builder.singleton(StubDataCollectorSettings, lambda: StubDataCollectorSettings())
         builder.singleton(IDataCollector, StubDataCollector)
         builder.singleton(IClassifier, StubClassifier)
         builder.singleton(IT9Predictor, StubT9Predictor)
     else:
+        builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
         builder.singleton(IDataCollector, UnicornDataCollector)
         builder.singleton(IClassifier, Classifier)
         builder.singleton(IT9Predictor, T9Predictor)

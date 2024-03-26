@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 2
+    repetitions_count: int = 1
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -43,9 +43,14 @@ class SquareSingleCharacterStrategySettings(BaseSettings):
     min_distance: int = 2
 
 class FilesSettings(BaseSettings):
-    images_dir: Path = Path("./static")
+    static_dir: Path = Path("./static")
     keyboard_items_pattern: str = 'keyboard_item_{}_{}'
     keyboard_flash_item_filename: str = 'keyboard_item_flash'
+
+    classifier_model_filename: str = 'classifier_model.pickle'
+    records_dir: Path = Path("./records")
+    time_format: str = '%d_%m_%Y__%H_%M_%S'
+    record_pattern: str = 'record_{}_{}.csv'
 
 class ViewSettings(BaseSettings):
     update_interval_ms: int = 1
