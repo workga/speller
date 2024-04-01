@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 1
+    repetitions_count: int = 8
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -53,16 +53,16 @@ class FilesSettings(BaseSettings):
     record_pattern: str = 'record_{}_{}.csv'
 
 class ViewSettings(BaseSettings):
-    update_interval_ms: int = 1
+    update_interval_ms: int = 5
     font_size: int = 14
-    keyboard_items_scale: float = 0.8
+    keyboard_items_scale: float = 1.2
 
     screen_width: int = 1920 - 120
     screen_height: int = 1080 - 80
     fullscreen: bool = True
 
 class LoggingSettings(BaseSettings):
-    level: str = 'INFO'
+    level: str = 'WARNING'
 
 class StateManagerSettings(BaseSettings):
     max_suggestions: int = 6
@@ -71,5 +71,5 @@ class StubDataCollectorSettings(BaseSettings):
     ms_per_sample: Literal[4] = 4
 
 class UnicornDataCollectorSettings(BaseSettings):
-    single_batch: bool = True
-    batch_size: int = 50
+    single_batch: bool = False
+    batch_size: int = 250

@@ -1,9 +1,10 @@
 import abc
+from collections import deque
 from contextlib import contextmanager
 import logging
 import random
 import time
-from typing import Iterable, Iterator, Sequence, cast
+from typing import Iterator, Sequence, cast
 from speller.settings import StubDataCollectorSettings, UnicornDataCollectorSettings
 from unapi import Unicorn
 
@@ -27,7 +28,7 @@ class StubDataCollector(IDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         time.sleep(self._settings.ms_per_sample * number_of_samples / 1000)
         for _ in range(number_of_samples):
-            yield (random.random(),) * 8
+            yield [random.random()] * 8
 
 
 class UnicornDataCollector(IDataCollector): 
@@ -56,31 +57,23 @@ class UnicornDataCollector(IDataCollector):
         yield
         self.bci.stopAcquisition(self.handle_id)
 
-    def _get_samples(self) -> Iterator[DataSampleType]:
-        flatten_batch = self.bci.getData(self.handle_id, self._settings.batch_size)
-        samples = (flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels] for i in range(self._settings.batch_size))
-        for sample in samples:
-            yield [sample[i] for i in self.eeg_indexes]
-
-    def _samples_from_batch(self, batch_size: int) -> Iterator[DataSampleType]:
-        flatten_batch = self.bci.getData(self.handle_id, batch_size)
-        for i in range(batch_size):
-            yield flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
-    
     def _eeg_sample(self, sample: DataSampleType) -> DataSampleType:
         return [sample[i] for i in self.eeg_indexes]
     
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
-        with self._start_acquisition():            
-            batch_size = number_of_samples if self._settings.single_batch else self._settings.batch_size
+        batch_size = self._settings.batch_size
 
-            counter = 0
-            while True:
-                for sample in self._samples_from_batch(batch_size):
-                    yield self._eeg_sample(sample)
-                    counter +=1
-                    if counter >= number_of_samples:
-                        return
+        with self._start_acquisition():
+            flatten_batches = deque()
+            for _ in range(number_of_samples // batch_size):
+                flatten_batches.append(self.bci.getData(self.handle_id, batch_size))
+            if size := number_of_samples % batch_size:
+                flatten_batches.append(self.bci.getData(self.handle_id, size))
+
+        for flatten_batch in flatten_batches:
+            for i in range(len(flatten_batch) // self.number_of_channels):
+                sample = flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
+                yield self._eeg_sample(sample)
 
     def __del__(self):
         self.bci.closeDevice(self.handle_id)

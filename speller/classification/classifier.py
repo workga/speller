@@ -35,7 +35,7 @@ class Classifier(IClassifier):
         self._files_settings = files_settings
         self._model = self._load_model()
 
-    def load_model(self) -> SVC:
+    def _load_model(self) -> SVC:
         with open(
             os.path.join(self._files_settings.static_dir, self._files_settings.classifier_model_filename), "rb"
         ) as f:

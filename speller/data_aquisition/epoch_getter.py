@@ -1,5 +1,6 @@
 import abc
 import logging
+import time
 from typing import Iterator, Sequence
 
 from speller.data_aquisition.data_collector import DataSampleType, IDataCollector
@@ -29,6 +30,8 @@ class EpochGetter(IEpochGetter):
         logger.debug("EpochGetter: start yielding %s epochs", number_of_epoches)
         number_of_samples = self._strategy_settings.epoch_size_samples + (number_of_epoches - 1) * self._strategy_settings.epoch_interval_samples
         sample_generator = self._data_collector.collect(number_of_samples)
+
+        print(f'{number_of_samples=}')
         
         current_epoch = []
         for _ in range(self._strategy_settings.epoch_size_samples):
@@ -49,4 +52,4 @@ class EpochGetter(IEpochGetter):
         logger.debug("EpochGetter: stop yielding epochs")
 
         assert len(samples) == number_of_samples
-        self._recorder.record_sequence(samples, [0]*len(samples))
+        self._recorder.record_sequence(samples, [1] + [0]*(len(samples) - 1))

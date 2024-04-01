@@ -1,6 +1,7 @@
+import click
+
 import logging
 from threading import Thread
-from time import sleep
 from deps import get_speller_container
 
 from speller.session.speller_runner import SpellerRunner
@@ -11,8 +12,10 @@ from speller.view.speller_view import SpellerView
 logger = logging.getLogger(__name__)
 
 
-def run() -> None:
-    container = get_speller_container()
+@click.command()
+@click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
+def run(stub: bool) -> None:
+    container = get_speller_container(stub)
 
     logging.basicConfig(level=container.resolve(LoggingSettings).level)
 

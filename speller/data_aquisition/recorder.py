@@ -13,7 +13,8 @@ from speller.settings import FilesSettings
 
 class Event(Enum):
     NONE = 0
-    FLASH = 1
+    SEQUENCE_START = 1
+    FLASH = 2
 
 
 class IRecorder(abc.ABC):
@@ -47,9 +48,15 @@ class Recorder(abc.ABC):
 
     @staticmethod
     def _make_record(sample: DataSampleType, event: Event):
-        return ",".join(map(str, sample + (event,)))
+        return ",".join(map(str, sample + [event,]))
         
     def record_sequence(self, samples: Sequence[DataSampleType], events: Sequence[Event]) -> None:
+        # сделать этот класс аккумулятором:
+        # epoch getter сохранит в него семплы,
+        # sequence handler сохранит в него flashing sequence
+        # рекордер кладет это в очереди и попает из каждой, если все непустые
+        # еще рекордер возьмет инфу из ExperimentSettings
+        # подумать, как запускать эксперимент, чтобы у испытуемого всегда горел экран
         records = '\n'.join(map(self._make_record, samples, events)) + '\n'
         self._write(records)
         
