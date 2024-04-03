@@ -35,8 +35,26 @@ class StrategySettings(BaseSettings):
         return self
 
     @cached_property
+    def epoch_interval_ms(self) -> int:
+        return self.flash_duration_ms + self.break_duration_ms
+
+    @cached_property
     def epoch_interval_samples(self) -> int:
-        return (self.flash_duration_ms + self.break_duration_ms) // 4
+        return self.epoch_interval_ms // 4
+    
+
+    # TODO: перейти к float, убрать @cached_property
+    @cached_property
+    def flash_duration_s(self):
+        return self.flash_duration_ms / 1000
+    
+    @cached_property
+    def break_duration_s(self):
+        return self.break_duration_ms / 1000
+    
+    @cached_property
+    def epoch_baseline_s(self):
+        return self.epoch_baseline_ms / 1000
     
 
 class SquareSingleCharacterStrategySettings(BaseSettings):
@@ -53,7 +71,7 @@ class FilesSettings(BaseSettings):
     record_pattern: str = 'record_{}_{}.csv'
 
 class ViewSettings(BaseSettings):
-    update_interval_ms: int = 5
+    update_interval_ms: int = 1
     font_size: int = 14
     keyboard_items_scale: float = 1.2
 

@@ -1,8 +1,6 @@
 import abc
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 import logging
-from threading import Thread
+from multiprocessing.pool import ThreadPool
 import time
 from speller.classification.classifier import IClassifier
 from speller.data_aquisition.epoch_getter import IEpochGetter
@@ -37,7 +35,7 @@ class SequenceHandler(ISequenceHandler):
         self._strategy_settings = strategy_settings
 
         self._future = None
-        self._executor = ThreadPoolExecutor(max_workers=1)
+        self._pool = ThreadPool(processes=1)
 
     def handle_sequence(self) -> ItemPositionType:
         logger.info("SequnceHandler: start handling sequence")
@@ -45,10 +43,9 @@ class SequenceHandler(ISequenceHandler):
         logger.debug("SequnceHandler: got flashing sequence")
         epoch_generator = self._epoch_getter.get_epochs(len(flashing_sequence))
         
-        self._run_state_updater(flashing_sequence)
+        self._run_state_updater(flashing_sequence, time.monotonic())
 
-        epochs = list(epoch_generator)
-        probabilities = [self._classifier.classify(epoch) for epoch in epochs]
+        probabilities = [self._classifier.classify(epoch) for epoch in epoch_generator]
 
         if len(probabilities) < len(flashing_sequence):
             raise RuntimeError("SequnceHandler: run out of epochs")
@@ -56,23 +53,24 @@ class SequenceHandler(ISequenceHandler):
         logger.info("SequnceHandler: finishing handling sequence")
         return self._flashing_strategy.predict_item_position(flashing_sequence, probabilities)
     
-    def _task(self, flashing_sequence: FlashingSequenceType):
-        t = Timer()
+    def _run_state_updater(self, flashing_sequence: FlashingSequenceType, start_time: float):
+        if self._future:
+            self._future.wait()
+        self._future = self._pool.apply_async(self._task, (flashing_sequence, start_time))
+
+    def _task(self, flashing_sequence: FlashingSequenceType, start_time: float):
         logger.debug("SequnceHandler: running state updater")
-        time.sleep(self._strategy_settings.epoch_baseline_ms / 1000)
+        t = Timer()
+
+        next_time = start_time + self._strategy_settings.epoch_baseline_s
+        time.sleep(max(0, next_time - time.monotonic()))
         for flashing_list in flashing_sequence:
             self._state_manager.set_flashing_list(flashing_list)
-            time.sleep(self._strategy_settings.flash_duration_ms / 1000)
+            next_time += self._strategy_settings.flash_duration_s
+            time.sleep(max(0, next_time - time.monotonic()))
+
             self._state_manager.reset_flashing_list()
-            time.sleep(self._strategy_settings.break_duration_ms / 1000)
-        t.time('flashing')
-    
-    def _run_state_updater(self, flashing_sequence: FlashingSequenceType):
-        if self._future:
-            self._future.result()
-        self._future = self._executor.submit(self._task, flashing_sequence)
-
-
-
-
+            next_time += self._strategy_settings.break_duration_s
+            time.sleep(max(0, next_time - time.monotonic()))
         
+        t.time('flushing')

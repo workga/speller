@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
 def run(stub: bool) -> None:
+    # import sys
+    # sys.setswitchinterval(0.001)
     container = get_speller_container(stub)
 
     logging.basicConfig(level=container.resolve(LoggingSettings).level)

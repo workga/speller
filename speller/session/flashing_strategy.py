@@ -73,6 +73,7 @@ class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
         result = []
         items = list(range(size**2))
         for _ in range(repetitions):
+            # TODO: избегать повторений на стыках
             random.shuffle(items)
             result += items
         
