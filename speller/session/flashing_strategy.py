@@ -3,18 +3,14 @@ from collections import defaultdict
 from itertools import product
 import logging
 import random
-from typing import Sequence
 
-from speller.settings import SquareSingleCharacterStrategySettings, StrategySettings
+from speller.data_aquisition.recorder import IRecorder
+from speller.session.entity import FlashingSequenceType, ItemPositionType
+from speller.settings import StrategySettings
 
 
 logger = logging.getLogger(__name__)
     
-
-ItemPositionType = tuple[int, int]
-FlashingListType = Sequence[ItemPositionType]
-FlashingSequenceType = Sequence[FlashingListType]
-
 
 class IFlashingStrategy(abc.ABC):
     @abc.abstractmethod
@@ -62,9 +58,9 @@ class SquareRowColumnFlashingStrategy(IFlashingStrategy):
 
 
 class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
-    def __init__(self, settings: SquareSingleCharacterStrategySettings, strategy_settings: StrategySettings):
-        self._settings = settings
+    def __init__(self, strategy_settings: StrategySettings, recorder: IRecorder):
         self._strategy_settings = strategy_settings
+        self._recorder = recorder
    
     def _generate_flat_sequence(self) -> list[int]:
         size = self._strategy_settings.keyboard_size
@@ -73,14 +69,17 @@ class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
         result = []
         items = list(range(size**2))
         for _ in range(repetitions):
-            # TODO: избегать повторений на стыках
             random.shuffle(items)
+            if result and result[-1] == items[0]:
+                items[0], items[1] = items[1], items[0]
             result += items
         
         return result
     
     def get_flashing_sequence(self) -> FlashingSequenceType:
-        return [[(i // 4, i % 4)] for i in self._generate_flat_sequence()]
+        sequence = [[(i // 4, i % 4)] for i in self._generate_flat_sequence()]
+        self._recorder.record_flashing_sequence(sequence)
+        return sequence
     
     def predict_item_position(self, flashing_sequence: FlashingSequenceType, probabilities: list[float]) -> ItemPositionType:
         accumulators = [0] * (self._strategy_settings.keyboard_size ** 2)

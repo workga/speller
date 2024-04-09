@@ -4,7 +4,8 @@ from multiprocessing.pool import ThreadPool
 import time
 from speller.classification.classifier import IClassifier
 from speller.data_aquisition.epoch_getter import IEpochGetter
-from speller.session.flashing_strategy import FlashingSequenceType, IFlashingStrategy, ItemPositionType
+from speller.session.entity import FlashingSequenceType, ItemPositionType
+from speller.session.flashing_strategy import IFlashingStrategy
 from speller.session.state_manager import IStateManager
 from speller.settings import StrategySettings
 from speller.utils import Timer
@@ -60,7 +61,7 @@ class SequenceHandler(ISequenceHandler):
 
     def _task(self, flashing_sequence: FlashingSequenceType, start_time: float):
         logger.debug("SequnceHandler: running state updater")
-        t = Timer()
+        # t = Timer()
 
         next_time = start_time + self._strategy_settings.epoch_baseline_s
         time.sleep(max(0, next_time - time.monotonic()))
@@ -73,4 +74,4 @@ class SequenceHandler(ISequenceHandler):
             next_time += self._strategy_settings.break_duration_s
             time.sleep(max(0, next_time - time.monotonic()))
         
-        t.time('flushing')
+        # t.time('flashing')

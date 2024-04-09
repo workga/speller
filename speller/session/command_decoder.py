@@ -1,6 +1,6 @@
 import abc
 import logging
-from speller.session.flashing_strategy import ItemPositionType
+from speller.session.entity import ItemPositionType
 
 
 logger = logging.getLogger(__name__)

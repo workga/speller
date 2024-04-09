@@ -11,7 +11,7 @@ from typing import Any, Sequence
 
 from PIL import Image, ImageTk
 
-from speller.session.flashing_strategy import FlashingListType
+from speller.session.entity import FlashingListType
 from speller.session.state_manager import IStateManager
 
 from speller.settings import FilesSettings, StrategySettings, ViewSettings
@@ -63,24 +63,27 @@ class SpellerView:
 
         self._speller_frame = Frame(self._main_frame, bg=Color.LIGHT_GRAY)
         self._speller_frame.place(relx=0.5, rely=0.5, anchor='center')
+        
+        small_proportion = 0.3
+        large_proportion = 0.7
 
-        self._speller_frame.rowconfigure(0, minsize=0.4*self._view_settings.screen_height)
-        self._speller_frame.rowconfigure(1, minsize=0.6*self._view_settings.screen_height)
-        self._speller_frame.columnconfigure(0, minsize=0.6*self._view_settings.screen_height)
-        self._speller_frame.columnconfigure(1, minsize=0.4*self._view_settings.screen_height)
+        self._speller_frame.rowconfigure(0, minsize=small_proportion*self._view_settings.screen_height)
+        self._speller_frame.rowconfigure(1, minsize=large_proportion*self._view_settings.screen_height)
+        self._speller_frame.columnconfigure(0, minsize=large_proportion*self._view_settings.screen_height)
+        self._speller_frame.columnconfigure(1, minsize=small_proportion*self._view_settings.screen_height)
 
         self._frame_pad = 10
         self._field_pad = 20
 
         self._font = font.Font(family='Inconsolata', size=self._view_settings.font_size)
 
-        self._input_field_text_max_width = int((0.6*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
+        self._input_field_text_max_width = int((large_proportion*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
         self._input_field_text = ''
 
-        self._suggestions_field_text_max_width = int((0.4*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
+        self._suggestions_field_text_max_width = int((small_proportion*self._view_settings.screen_height - 2*self._field_pad) / self._font.measure('a'))
         self._suggestions_field_list = []
 
-        self._info_field_text_max_height = int((0.6*self._view_settings.screen_height - 2*self._field_pad) / self._font.metrics('linespace'))
+        self._info_field_text_max_height = int((large_proportion*self._view_settings.screen_height - 2*self._field_pad) / self._font.metrics('linespace'))
         self._info_field_text_height = 0
         self._info_field_text = ''
 

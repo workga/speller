@@ -28,11 +28,11 @@ class EpochGetter(IEpochGetter):
 
     def get_epochs(self, number_of_epoches: int) -> Iterator[EpochType]:
         logger.debug("EpochGetter: start yielding %s epochs", number_of_epoches)
-        number_of_samples = self._strategy_settings.epoch_size_samples + (number_of_epoches - 1) * self._strategy_settings.epoch_interval_samples
+        number_of_samples = self._strategy_settings.get_number_of_samples(number_of_epoches)
         sample_generator = self._data_collector.collect(number_of_samples)
 
-        print(f'{number_of_samples=}')
-        
+        # print(f'{number_of_samples=}')
+
         current_epoch = []
         for _ in range(self._strategy_settings.epoch_size_samples):
             current_epoch.append(next(sample_generator))
@@ -51,5 +51,4 @@ class EpochGetter(IEpochGetter):
         next(sample_generator, None)
         logger.debug("EpochGetter: stop yielding epochs")
 
-        assert len(samples) == number_of_samples
-        self._recorder.record_sequence(samples, [1] + [0]*(len(samples) - 1))
+        self._recorder.record_samples(samples)

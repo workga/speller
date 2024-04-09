@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 8
+    repetitions_count: int = 1
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -42,8 +42,6 @@ class StrategySettings(BaseSettings):
     def epoch_interval_samples(self) -> int:
         return self.epoch_interval_ms // 4
     
-
-    # TODO: перейти к float, убрать @cached_property
     @cached_property
     def flash_duration_s(self):
         return self.flash_duration_ms / 1000
@@ -56,9 +54,29 @@ class StrategySettings(BaseSettings):
     def epoch_baseline_s(self):
         return self.epoch_baseline_ms / 1000
     
+    def __repr__(self) -> str:
+        return f"flash={self.flash_duration_ms}__break={self.break_duration_ms}__reps={self.repetitions_count}"
+    
 
-class SquareSingleCharacterStrategySettings(BaseSettings):
-    min_distance: int = 2
+    def get_flashing_samples_indexes(self, number: int) -> list[int]:
+        index = ms_to_samples(self.epoch_baseline_ms)
+        indexes = []
+        for _ in range(number):
+            indexes.append(index)
+            index += self.epoch_interval_samples
+
+        return indexes
+    
+    def get_number_of_samples(self, number_of_epoches) -> int:
+        return self.epoch_size_samples + (number_of_epoches - 1) * self.epoch_interval_samples
+
+class ExperimentSettings(BaseSettings):
+    name: str = 'name'
+    comment: str = 'comment'
+    target: int = 0
+
+    def __repr__(self) -> str:
+        return f'name={self.name}__comment={self.comment}__target={self.target}'
 
 class FilesSettings(BaseSettings):
     static_dir: Path = Path("./static")
@@ -68,12 +86,12 @@ class FilesSettings(BaseSettings):
     classifier_model_filename: str = 'classifier_model.pickle'
     records_dir: Path = Path("./records")
     time_format: str = '%d_%m_%Y__%H_%M_%S'
-    record_pattern: str = 'record_{}_{}.csv'
+    record_pattern: str = 'record__{}__{}.csv'
 
 class ViewSettings(BaseSettings):
     update_interval_ms: int = 1
     font_size: int = 14
-    keyboard_items_scale: float = 1.2
+    keyboard_items_scale: float = 1.4
 
     screen_width: int = 1920 - 120
     screen_height: int = 1080 - 80
@@ -89,5 +107,4 @@ class StubDataCollectorSettings(BaseSettings):
     ms_per_sample: Literal[4] = 4
 
 class UnicornDataCollectorSettings(BaseSettings):
-    single_batch: bool = False
     batch_size: int = 250
