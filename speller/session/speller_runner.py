@@ -31,12 +31,23 @@ class SpellerRunner:
                 return
 
     def _handle_session(self) -> None:
-        while self._state_manager.is_session_running.is_set() and not self._state_manager.shutdown_event.is_set():
+        cycles = 0
+        max_cycles = self._state_manager.session_cycles
+
+        while (
+            cycles < max_cycles
+            and self._state_manager.is_session_running.is_set()
+            and not self._state_manager.shutdown_event.is_set()
+        ):
             predicted_item_position = self._sequence_handler.handle_sequence()
             logger.debug("SpellerRunner: got position=%s", predicted_item_position)
             command = self._command_decoder.decode_command(predicted_item_position)
             logger.info("SpellerRunner: got command %s", command)
             self._handle_command(command)
+            cycles += 1
+
+        if cycles >= max_cycles:
+            self._state_manager.finish_session()
 
     @singledispatchmethod
     def _handle_command(self, command: BaseCommand) -> None:

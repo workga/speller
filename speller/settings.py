@@ -54,9 +54,6 @@ class StrategySettings(BaseSettings):
     def epoch_baseline_s(self):
         return self.epoch_baseline_ms / 1000
     
-    def __repr__(self) -> str:
-        return f"flash={self.flash_duration_ms}__break={self.break_duration_ms}__reps={self.repetitions_count}"
-    
 
     def get_flashing_samples_indexes(self, number: int) -> list[int]:
         index = ms_to_samples(self.epoch_baseline_ms)
@@ -74,6 +71,7 @@ class ExperimentSettings(BaseSettings):
     name: str = 'name'
     comment: str = 'comment'
     target: int = 0
+    cycles_count: int = 10
 
     def __repr__(self) -> str:
         return f'name={self.name}__comment={self.comment}__target={self.target}'
@@ -93,8 +91,8 @@ class ViewSettings(BaseSettings):
     font_size: int = 14
     keyboard_items_scale: float = 1.4
 
-    screen_width: int = 1920 - 120
-    screen_height: int = 1080 - 80
+    screen_width: int = 1920
+    screen_height: int = 1080
     fullscreen: bool = True
 
 class LoggingSettings(BaseSettings):

@@ -1,5 +1,6 @@
 import abc
 from dataclasses import dataclass
+from datetime import datetime
 import logging
 from threading import Event
 from typing import Sequence
@@ -7,7 +8,7 @@ from speller.prediction.suggestions_getter import ISuggestionsGetter
 
 from speller.prediction.t9_predictor import T9_CHARS
 from speller.session.entity import FlashingListType
-from speller.settings import StateManagerSettings
+from speller.settings import ExperimentSettings, StateManagerSettings, StrategySettings
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,14 @@ class IStateManager(abc.ABC):
     is_session_running: Event
     shutdown_event: Event
 
+    session_name: str
+    session_comment: str
+    session_target: int
+    session_reps: int
+    session_cycles: int
+    session_start_time: datetime
+    
+
     @abc.abstractmethod
     def get_state(self) -> State:
         pass
@@ -49,7 +58,7 @@ class IStateManager(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def start_session(self) -> None:
+    def start_session(self, name: str, comment: str, target: int, reps: int, cycles: int) -> None:
         pass
 
     @abc.abstractmethod
@@ -78,14 +87,29 @@ class IStateManager(abc.ABC):
     
 
 class StateManager(IStateManager):
-    def __init__(self, suggestions_getter: ISuggestionsGetter, shutdown_event: Event, settings: StateManagerSettings):
+    def __init__(
+        self,
+        suggestions_getter: ISuggestionsGetter,
+        shutdown_event: Event, settings: StateManagerSettings,
+        strategy_settings: StrategySettings,
+        experiment_settings: ExperimentSettings,
+    ):
         self._suggestions_getter = suggestions_getter
         self.shutdown_event = shutdown_event
         self._settings = settings
+        self._strategy_settings = strategy_settings
+        self._experiment_settings = experiment_settings
         self._history: list[HistoryState] = []
         self._initialize()
         self.info = ""
         self.is_session_running: Event = Event()
+
+        self.session_name = self._experiment_settings.name
+        self.session_comment = self._experiment_settings.comment
+        self.session_target = self._experiment_settings.target
+        self.session_reps = self._strategy_settings.repetitions_count
+        self.session_cycles = self._experiment_settings.cycles_count
+        self.session_start_time = datetime.now()
 
     def _initialize(self) -> None:
         self.text = ""
@@ -101,7 +125,13 @@ class StateManager(IStateManager):
     def reset_flashing_list(self) -> None:
         self.flashing_list = []
 
-    def start_session(self) -> None:
+    def start_session(self, name: str, comment: str, target: int, reps: int, cycles: int) -> None:
+        self.session_name = name
+        self.session_comment = comment
+        self.session_target = target
+        self.session_reps = reps
+        self.session_cycles = cycles
+        self.session_start_time = datetime.now()
         self.is_session_running.set()
 
     def finish_session(self) -> None:

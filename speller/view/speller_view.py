@@ -5,7 +5,7 @@ from itertools import product
 import logging
 import os
 import textwrap
-from tkinter import Button, Frame, Label, StringVar, Tk, font
+from tkinter import END, Button, Entry, Frame, Label, StringVar, Tk, Toplevel, font
 
 from typing import Any, Sequence
 
@@ -40,7 +40,7 @@ class SpellerView:
         self._strategy_settings = strategy_settings
         self._files_settings = files_settings
         self._view_settings = view_settings
-        self._initialize_window()
+        self._initialize_windows()
 
     def _load_images(self, imagename: str, scale: float = 1) -> ImageTk.PhotoImage:
         image = Image.open(os.path.join(self._files_settings.static_dir, imagename + ".png"))
@@ -50,7 +50,7 @@ class SpellerView:
         )
         return ImageTk.PhotoImage(image)
 
-    def _initialize_window(self):
+    def _initialize_windows(self):
         self._window = Tk()
         self._window.protocol("WM_DELETE_WINDOW", self._shutdown)
         if self._view_settings.fullscreen:
@@ -112,11 +112,41 @@ class SpellerView:
         self._info_field = Label(self._info_frame, text='', anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
         self._info_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
+        self._initialize_controll_window()
 
+    def _initialize_controll_window(self) -> None:
+        self._controll_window = Toplevel(self._window)
+        self._controll_window.protocol("WM_DELETE_WINDOW", self._shutdown)
+        # self._controll_window.geometry("100x100")
+
+        self._controll_frame = Frame(self._controll_window, bg=Color.LIGHT_GRAY)
+        self._controll_frame.pack(fill='both', expand=True)
+
+        Label(self._controll_frame, text='Имя испытуемого', bg=Color.LIGHT_GRAY).grid(row=0, column=0)
+        self._name_entry = Entry(self._controll_frame)
+        self._name_entry.insert(END, self._state_manager.session_name)
+        self._name_entry.grid(row=0, column=1)
+        Label(self._controll_frame, text='Комментарий', bg=Color.LIGHT_GRAY).grid(row=1, column=0)
+        self._comment_entry = Entry(self._controll_frame)
+        self._comment_entry.insert(END, self._state_manager.session_comment)
+        self._comment_entry.grid(row=1, column=1)
+        Label(self._controll_frame, text='Целевой стимул (от 0 до 15)', bg=Color.LIGHT_GRAY).grid(row=2, column=0)
+        self._target_entry = Entry(self._controll_frame)
+        self._target_entry.insert(END, self._state_manager.session_target)
+        self._target_entry.grid(row=2, column=1)
+        Label(self._controll_frame, text='Число повторений', bg=Color.LIGHT_GRAY).grid(row=3, column=0)
+        self._reps_entry = Entry(self._controll_frame)
+        self._reps_entry.insert(END, self._state_manager.session_reps)
+        self._reps_entry.grid(row=3, column=1)
+        Label(self._controll_frame, text='Длина сессии', bg=Color.LIGHT_GRAY).grid(row=4, column=0)
+        self._cycles_entry = Entry(self._controll_frame)
+        self._cycles_entry.insert(END, self._state_manager.session_cycles)
+        self._cycles_entry.grid(row=4, column=1)
+        
         self._start_btn_text = StringVar()
         self._start_btn_text.set("Start")
-        self._start_btn = Button(self._speller_frame, textvariable=self._start_btn_text, command=self._handle_start_btn)
-        self._start_btn.grid(row=self._strategy_settings.keyboard_size + 1, column=0, columnspan=self._strategy_settings.keyboard_size)
+        self._start_btn = Button(self._controll_frame, textvariable=self._start_btn_text, command=self._handle_start_btn)
+        self._start_btn.grid(row=5, column=0, columnspan=2)
 
     def _initialize_keyboard(self) -> None:
         pattern = self._files_settings.keyboard_items_pattern
@@ -142,7 +172,13 @@ class SpellerView:
 
     def _handle_start_btn(self):
         if self._start_btn_text.get() == 'Start':
-            self._state_manager.start_session()
+            self._state_manager.start_session(
+                name=self._name_entry.get(),
+                comment=self._comment_entry.get(),
+                target=int(self._target_entry.get()),
+                reps=int(self._reps_entry.get()),
+                cycles=int(self._cycles_entry.get())
+            )
             self._start_btn_text.set('Stop')
         else:
             self._state_manager.finish_session()
@@ -201,6 +237,8 @@ class SpellerView:
         self._update_suggestions(state.suggestions)
         self._update_info(state.info)
 
+        if not self._state_manager.is_session_running.is_set():
+            self._start_btn_text.set('Start')
 
     def _finish(self) -> None:
         self._window.destroy()

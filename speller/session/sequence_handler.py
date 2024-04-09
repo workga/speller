@@ -40,7 +40,7 @@ class SequenceHandler(ISequenceHandler):
 
     def handle_sequence(self) -> ItemPositionType:
         logger.info("SequnceHandler: start handling sequence")
-        flashing_sequence = self._flashing_strategy.get_flashing_sequence()
+        flashing_sequence = self._flashing_strategy.get_flashing_sequence(self._state_manager.session_reps)
         logger.debug("SequnceHandler: got flashing sequence")
         epoch_generator = self._epoch_getter.get_epochs(len(flashing_sequence))
         

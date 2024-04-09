@@ -63,12 +63,15 @@ class UnicornDataCollector(IDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         batch_size = self._settings.batch_size
 
+        # t = Timer()
         with self._start_acquisition():
             flatten_batches = deque()
             for _ in range(number_of_samples // batch_size):
                 flatten_batches.append(self.bci.getData(self.handle_id, batch_size))
             if size := number_of_samples % batch_size:
                 flatten_batches.append(self.bci.getData(self.handle_id, size))
+
+        # t.time('collecting')
 
         for flatten_batch in flatten_batches:
             for i in range(len(flatten_batch) // self.number_of_channels):

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class IFlashingStrategy(abc.ABC):
     @abc.abstractmethod
-    def get_flashing_sequence(self) -> FlashingSequenceType:
+    def get_flashing_sequence(self, repetitions_count: int) -> FlashingSequenceType:
         pass
 
     @abc.abstractmethod
@@ -26,12 +26,12 @@ class SquareRowColumnFlashingStrategy(IFlashingStrategy):
     def __init__(self, settings: StrategySettings):
         self._settings = settings
     
-    def get_flashing_sequence(self) -> FlashingSequenceType:
+    def get_flashing_sequence(self, repetitions_count: int) -> FlashingSequenceType:
         rows_numbers = list(range(self._settings.keyboard_size))
         columns_numbers = list(range(self._settings.keyboard_size))
 
         sequence = []
-        for _ in range(self._settings.repetitions_count):
+        for _ in range(repetitions_count):
             random.shuffle(rows_numbers)
             random.shuffle(columns_numbers)
             for row_number, column_number in zip(rows_numbers, columns_numbers):
@@ -62,13 +62,12 @@ class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
         self._strategy_settings = strategy_settings
         self._recorder = recorder
    
-    def _generate_flat_sequence(self) -> list[int]:
+    def _generate_flat_sequence(self, repetitions_count: int) -> list[int]:
         size = self._strategy_settings.keyboard_size
-        repetitions = self._strategy_settings.repetitions_count
 
         result = []
         items = list(range(size**2))
-        for _ in range(repetitions):
+        for _ in range(repetitions_count):
             random.shuffle(items)
             if result and result[-1] == items[0]:
                 items[0], items[1] = items[1], items[0]
@@ -76,8 +75,8 @@ class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
         
         return result
     
-    def get_flashing_sequence(self) -> FlashingSequenceType:
-        sequence = [[(i // 4, i % 4)] for i in self._generate_flat_sequence()]
+    def get_flashing_sequence(self, repetitions_count: int) -> FlashingSequenceType:
+        sequence = [[(i // 4, i % 4)] for i in self._generate_flat_sequence(repetitions_count)]
         self._recorder.record_flashing_sequence(sequence)
         return sequence
     
