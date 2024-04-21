@@ -2,8 +2,9 @@ import click
 
 import logging
 from threading import Thread
-from deps import get_speller_container
+from deps import get_monitoring_container, get_speller_container
 
+from speller.monitoring.monitoring import IMonitoring
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import LoggingSettings
 from speller.view.speller_view import SpellerView
@@ -12,9 +13,14 @@ from speller.view.speller_view import SpellerView
 logger = logging.getLogger(__name__)
 
 
-@click.command()
+@click.group()
+def speller_group():
+    pass
+
+
+@speller_group.command()
 @click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
-def run(stub: bool) -> None:
+def speller(stub: bool) -> None:
     # import sys
     # sys.setswitchinterval(0.001)
     container = get_speller_container(stub)
@@ -30,9 +36,24 @@ def run(stub: bool) -> None:
     speller_view.run()
 
     speller_runner_thread.join()
-    
 
-if __name__ == "__main__":
-    run()
 
+@click.group()
+def monitoring_group():
+    pass
+
+
+@monitoring_group.command()
+@click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
+def monitoring(stub: bool) -> None:
+    container = get_monitoring_container(stub)
+    monitoring = container.resolve(IMonitoring)
+    monitoring.run()
+
+
+cli = click.CommandCollection(sources=[speller_group, monitoring_group])
+
+
+if __name__ == '__main__':
+    cli()
     

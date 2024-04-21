@@ -68,9 +68,9 @@ class StrategySettings(BaseSettings):
         return self.epoch_size_samples + (number_of_epoches - 1) * self.epoch_interval_samples
 
 class ExperimentSettings(BaseSettings):
-    name: str = 'name'
-    comment: str = 'comment'
-    target: int = 0
+    name: str = 'gleb'
+    comment: str = 'first_test'
+    target: int = 5
     cycles_count: int = 10
 
     def __repr__(self) -> str:
@@ -106,3 +106,7 @@ class StubDataCollectorSettings(BaseSettings):
 
 class UnicornDataCollectorSettings(BaseSettings):
     batch_size: int = 250
+
+class MonitoringSettings(BaseSettings):
+    last_samples_count: int = 250 * 10
+    update_interval_ms: int = 1000

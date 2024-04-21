@@ -7,6 +7,7 @@ from independency.container import Dependency
 from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.data_aquisition.recorder import IRecorder, Recorder
+from speller.monitoring.monitoring import IMonitoring, StubMonitoring
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
@@ -16,7 +17,7 @@ from speller.session.flashing_strategy import IFlashingStrategy, SquareSingleCha
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
 from speller.session.speller_runner import SpellerRunner
 from speller.session.state_manager import IStateManager, StateManager
-from speller.settings import ExperimentSettings, FilesSettings, LoggingSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
+from speller.settings import ExperimentSettings, FilesSettings, LoggingSettings, MonitoringSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
 from speller.view.speller_view import SpellerView
 
 
@@ -70,5 +71,17 @@ def get_speller_container(stub: bool = True) -> Container:
 
     builder.singleton(SpellerRunner, SpellerRunner)
     builder.singleton(SpellerView, SpellerView)
+
+    return builder.build()
+
+
+def get_monitoring_container(stub: bool = True) -> Container:
+    builder = ContainerBuilder()
+
+    builder.singleton(MonitoringSettings, lambda: MonitoringSettings())
+    if stub:
+        builder.singleton(IMonitoring, StubMonitoring)
+    else:
+        raise NotImplemented('no no-stub monitoring!')
 
     return builder.build()
