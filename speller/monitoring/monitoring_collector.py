@@ -1,16 +1,11 @@
 import abc
 from collections import deque
+from threading import Event
 from threading import Thread
-import time
-from typing import Sequence, cast
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as np
-import pandas as pd
-import glob
+from typing import Sequence
 
 from speller.data_aquisition.data_collector import DataSampleType, IDataCollector
-from speller.settings import FilesSettings, MonitoringSettings
+from speller.settings import MonitoringSettings
 
 class IMonitoringCollector(abc.ABC):
     @abc.abstractmethod
@@ -18,7 +13,7 @@ class IMonitoringCollector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_data(self) -> Sequence[Sequence[DataSampleType]]:
+    def get_data(self) -> Sequence[DataSampleType]:
         pass
 
 class MonitoringCollector:
@@ -26,15 +21,15 @@ class MonitoringCollector:
         self._data_collector = data_collector
         self._settings = settings
 
-    def run(self, accumulator_size: int) -> None:
+    def run(self, accumulator_size: int, shutdown_event: Event) -> None:
         self._accumulator = deque([[0] * 8] * accumulator_size, maxlen=accumulator_size)
-        self._daemon = Thread(target=self._collect, daemon=True)
-        self._daemon.start()
+        self._collector_thread = Thread(target=self._collect, args=(shutdown_event,))
+        self._collector_thread.start()
 
-    def _collect(self):
-        data_iterator = self._data_collector.collect_continuously(self._settings.collect_interval_samples)
-        while True:
-            self._accumulator.extend(next(data_iterator))
+    def _collect(self, shutdown_event):
+        for samples in self._data_collector.collect_continuously(self._settings.collect_interval_samples, shutdown_event):
+            self._accumulator.extend(samples)
+        
 
-    def get_data(self) -> Sequence[Sequence[DataSampleType]]:
+    def get_data(self) -> Sequence[DataSampleType]:
         return self._accumulator

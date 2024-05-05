@@ -3,8 +3,11 @@ from collections import deque
 from contextlib import contextmanager
 import logging
 import random
+from threading import Event
 import time
 from typing import Iterator, Sequence, cast
+
+from pkg_resources import yield_lines
 from speller.settings import StubDataCollectorSettings, UnicornDataCollectorSettings
 from unapi import Unicorn
 
@@ -21,7 +24,7 @@ class IDataCollector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
+    def collect_continuously(self, number_of_samples: int, shutdown_event: Event) -> Iterator[list[DataSampleType]]:
         pass
 
 
@@ -29,14 +32,20 @@ class StubDataCollector(IDataCollector):
     def __init__(self, settings: StubDataCollectorSettings):
         self._settings = settings
 
+    @staticmethod
+    def _get_random_sample() -> DataSampleType:
+        sample = []
+        for _ in range(8):
+            sample.append(random.random())
+        return sample
+
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         time.sleep(self._settings.ms_per_sample * number_of_samples / 1000)
         for _ in range(number_of_samples):
-            yield [random.random()] * 8
+            yield self._get_random_sample()
 
-    # тут не хватает корректного завершения
-    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
-        while True:
+    def collect_continuously(self, number_of_samples: int, shutdown_event: Event) -> Iterator[list[DataSampleType]]:
+        while not shutdown_event.is_set():
             yield list(self.collect(number_of_samples))
 
 
@@ -73,7 +82,6 @@ class UnicornDataCollector(IDataCollector):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         batch_size = self._settings.batch_size
 
-        # t = Timer()
         with self._start_acquisition():
             flatten_batches = deque()
             for _ in range(number_of_samples // batch_size):
@@ -81,18 +89,16 @@ class UnicornDataCollector(IDataCollector):
             if size := number_of_samples % batch_size:
                 flatten_batches.append(self.bci.getData(self.handle_id, size))
 
-        # t.time('collecting')
-
         for flatten_batch in flatten_batches:
             for i in range(len(flatten_batch) // self.number_of_channels):
                 sample = flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
                 yield self._eeg_sample(sample)
 
-    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
+    def collect_continuously(self, number_of_samples: int, shutdown_event: Event) -> Iterator[list[DataSampleType]]:
         assert number_of_samples <= self._settings.batch_size
 
         with self._start_acquisition():
-            while True:
+            while not shutdown_event.is_set():
                 samples = []
 
                 flatten_batch = self.bci.getData(self.handle_id, number_of_samples)

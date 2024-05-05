@@ -110,12 +110,18 @@ class UnicornDataCollectorSettings(BaseSettings):
 class MonitoringSettings(BaseSettings):
     plot_length_s: int = 10
     update_interval_ms: int = 100
+    quality_interval_samples: int = 250
 
     @field_validator('update_interval_ms')
     @classmethod
     def value_is_multiple_of_four(cls, v: int, info: ValidationInfo) -> int:
         assert v % 4 == 0, f'{info.field_name} must be a multiple of 4!'
         return v
+    
+    @model_validator(mode='after')
+    def plot_length_is_multiple_of_quality_interval(self) -> 'MonitoringSettings':
+        assert self.plot_length_samples % self.quality_interval_samples == 0, f'plot length samples must be a multiple of quality interval samples!'
+        return self
 
     @cached_property
     def plot_length_samples(self) -> int:
@@ -124,3 +130,11 @@ class MonitoringSettings(BaseSettings):
     @cached_property
     def collect_interval_samples(self) -> int:
         return self.update_interval_ms // 4
+    
+    @cached_property
+    def quality_length_measurements(self) -> int:
+        return self.plot_length_samples // self.quality_interval_samples
+    
+    @cached_property
+    def update_quality_interval_ms(self) -> int:
+        return 1000 * self.quality_interval_samples // 250
