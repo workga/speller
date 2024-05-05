@@ -20,6 +20,10 @@ class IDataCollector(abc.ABC):
     def collect(self, number_of_samples: int) -> Iterator[DataSampleType]:
         pass
 
+    @abc.abstractmethod
+    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
+        pass
+
 
 class StubDataCollector(IDataCollector):
     def __init__(self, settings: StubDataCollectorSettings):
@@ -30,12 +34,17 @@ class StubDataCollector(IDataCollector):
         for _ in range(number_of_samples):
             yield [random.random()] * 8
 
+    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
+        while True:
+            yield list(self.collect(number_of_samples))
+
 
 class UnicornDataCollector(IDataCollector): 
     _NAMES_OF_EEG_CHANNELS = [f'EEG {i}' for i in range(1, 9)]
 
     def __init__(self, settings: UnicornDataCollectorSettings):
         self._settings = settings
+        self.handle_id = None
         
         self.bci = Unicorn()
 
@@ -78,8 +87,23 @@ class UnicornDataCollector(IDataCollector):
                 sample = flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
                 yield self._eeg_sample(sample)
 
+    def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
+        assert number_of_samples <= self._settings.batch_size
+
+        with self._start_acquisition():
+            while True:
+                samples = []
+
+                flatten_batch = self.bci.getData(self.handle_id, number_of_samples)
+                for i in range(len(flatten_batch) // self.number_of_channels):
+                    sample = flatten_batch[i * self.number_of_channels: (i + 1) * self.number_of_channels]
+                    samples.append(self._eeg_sample(sample))
+                
+                yield samples
+
     def __del__(self):
-        self.bci.closeDevice(self.handle_id)
+        if self.handle_id:
+            self.bci.closeDevice(self.handle_id)
 
 
 # s = Event()

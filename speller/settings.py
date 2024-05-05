@@ -83,7 +83,7 @@ class FilesSettings(BaseSettings):
 
     classifier_model_filename: str = 'classifier_model.pickle'
     records_dir: Path = Path("./records")
-    time_format: str = '%d_%m_%Y__%H_%M_%S'
+    time_format: str = '%Y_%m_%d__%H_%M_%S'
     record_pattern: str = 'record__{}__{}.csv'
 
 class ViewSettings(BaseSettings):
@@ -108,5 +108,5 @@ class UnicornDataCollectorSettings(BaseSettings):
     batch_size: int = 250
 
 class MonitoringSettings(BaseSettings):
-    last_samples_count: int = 250 * 10
+    plot_length_samples: int = 250 * 10
     update_interval_ms: int = 1000
