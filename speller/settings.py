@@ -108,5 +108,19 @@ class UnicornDataCollectorSettings(BaseSettings):
     batch_size: int = 250
 
 class MonitoringSettings(BaseSettings):
-    plot_length_samples: int = 250 * 10
-    update_interval_ms: int = 1000
+    plot_length_s: int = 10
+    update_interval_ms: int = 100
+
+    @field_validator('update_interval_ms')
+    @classmethod
+    def value_is_multiple_of_four(cls, v: int, info: ValidationInfo) -> int:
+        assert v % 4 == 0, f'{info.field_name} must be a multiple of 4!'
+        return v
+
+    @cached_property
+    def plot_length_samples(self) -> int:
+        return self.plot_length_s * 250
+    
+    @cached_property
+    def collect_interval_samples(self) -> int:
+        return self.update_interval_ms // 4

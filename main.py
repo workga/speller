@@ -4,7 +4,7 @@ import logging
 from threading import Thread
 from deps import get_monitoring_container, get_speller_container
 
-from speller.monitoring.monitoring import IMonitoring
+from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import LoggingSettings
 from speller.view.speller_view import SpellerView
@@ -45,9 +45,10 @@ def monitoring_group():
 
 @monitoring_group.command()
 @click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
-def monitoring(stub: bool) -> None:
-    container = get_monitoring_container(stub)
-    monitoring = container.resolve(IMonitoring)
+@click.option("--file", is_flag=True, show_default=True, default=False, help="Read stub data from file")
+def monitoring(stub: bool, file: bool) -> None:
+    container = get_monitoring_container(stub, file)
+    monitoring = container.resolve(MonitoringVisualizer)
     monitoring.run()
 
 

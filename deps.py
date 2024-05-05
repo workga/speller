@@ -7,7 +7,8 @@ from independency.container import Dependency
 from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.data_aquisition.recorder import IRecorder, Recorder
-from speller.monitoring.monitoring import IMonitoring, Monitoring, StubMonitoring
+from speller.monitoring.monitoring_collector import IMonitoringCollector, MonitoringCollector
+from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
@@ -75,20 +76,23 @@ def get_speller_container(stub: bool = True) -> Container:
     return builder.build()
 
 
-def get_monitoring_container(stub: bool = True) -> Container:
+def get_monitoring_container(stub: bool = True, file: bool = False) -> Container:
     builder = ContainerBuilder()
 
     builder.singleton(MonitoringSettings, lambda: MonitoringSettings())
-    builder.singleton(FilesSettings, lambda: FilesSettings())
+    # builder.singleton(FilesSettings, lambda: FilesSettings())
 
     if stub:
-        # builder.singleton(IMonitoring, StubMonitoring)
-        builder.singleton(StubDataCollectorSettings, lambda: StubDataCollectorSettings())
-        builder.singleton(IDataCollector, StubDataCollector)
-        builder.singleton(IMonitoring, Monitoring)
+        if file:
+            raise NotImplemented('No stub file data collector!')
+        else:
+            builder.singleton(StubDataCollectorSettings, lambda: StubDataCollectorSettings())
+            builder.singleton(IDataCollector, StubDataCollector)
     else:
         builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
         builder.singleton(IDataCollector, UnicornDataCollector)
-        builder.singleton(IMonitoring, Monitoring)
+
+    builder.singleton(IMonitoringCollector, MonitoringCollector)
+    builder.singleton(MonitoringVisualizer, MonitoringVisualizer)
 
     return builder.build()

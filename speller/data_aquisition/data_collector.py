@@ -34,6 +34,7 @@ class StubDataCollector(IDataCollector):
         for _ in range(number_of_samples):
             yield [random.random()] * 8
 
+    # тут не хватает корректного завершения
     def collect_continuously(self, number_of_samples: int) -> Iterator[list[DataSampleType]]:
         while True:
             yield list(self.collect(number_of_samples))
@@ -104,24 +105,3 @@ class UnicornDataCollector(IDataCollector):
     def __del__(self):
         if self.handle_id:
             self.bci.closeDevice(self.handle_id)
-
-
-# s = Event()
-# u = UnicornDataCollector(s)
-
-# counter = 0
-# for sample in u.collect():
-#     print(sample)
-#     counter += 1
-#     if counter > 10:
-#         s.set()
-            
-# u = SyncUnicornDataCollector(Event())
-# t = time.monotonic()
-# for s in u.collect(15000):
-#     pass
-# print(time.monotonic() - t)
-            
-# u = UnicornDataCollector(Event())
-# for s in u.collect():
-#     print(s)
