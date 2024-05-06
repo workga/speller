@@ -134,11 +134,11 @@ class SpellerView:
         self._target_entry = Entry(self._controll_frame)
         self._target_entry.insert(END, self._state_manager.session_target)
         self._target_entry.grid(row=2, column=1)
-        Label(self._controll_frame, text='Число повторений', bg=Color.LIGHT_GRAY).grid(row=3, column=0)
+        Label(self._controll_frame, text='Число повторений в итерации', bg=Color.LIGHT_GRAY).grid(row=3, column=0)
         self._reps_entry = Entry(self._controll_frame)
         self._reps_entry.insert(END, self._state_manager.session_reps)
         self._reps_entry.grid(row=3, column=1)
-        Label(self._controll_frame, text='Длина сессии', bg=Color.LIGHT_GRAY).grid(row=4, column=0)
+        Label(self._controll_frame, text='Количество итераций', bg=Color.LIGHT_GRAY).grid(row=4, column=0)
         self._cycles_entry = Entry(self._controll_frame)
         self._cycles_entry.insert(END, self._state_manager.session_cycles)
         self._cycles_entry.grid(row=4, column=1)
@@ -161,7 +161,7 @@ class SpellerView:
         for i, j in product(range(size), range(size)):
             image = self._load_images(pattern.format(i, j), self._view_settings.keyboard_items_scale)
             self._keyboard_images[i][j] = image
-            label = Label(self._keyboard_frame, image=image)
+            label = Label(self._keyboard_frame, image=image, borderwidth=0)
             self._keyboard_labels[i][j] = label
             label.grid(row=i, column=j)
 

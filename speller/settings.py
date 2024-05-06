@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 1
+    repetitions_count: int = 25
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -71,7 +71,7 @@ class ExperimentSettings(BaseSettings):
     name: str = 'gleb'
     comment: str = 'first_test'
     target: int = 5
-    cycles_count: int = 10
+    cycles_count: int = 1
 
     def __repr__(self) -> str:
         return f'name={self.name}__comment={self.comment}__target={self.target}'
