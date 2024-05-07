@@ -20,4 +20,9 @@ Run monitoring:
 python main.py monitoring
 ```
 
-You can also use the --help option for all commands to find out the available options.
+Run viewer:
+```shell
+python main.py viewer
+```
+
+You can also use the --help option for all commands to find out the available options and arguments.

@@ -4,6 +4,7 @@ import logging
 from threading import Thread
 from deps import get_monitoring_container, get_speller_container
 
+from preprocessing.collect_epochs_speller import view_file
 from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import LoggingSettings
@@ -52,7 +53,19 @@ def monitoring(stub: bool, file: bool) -> None:
     monitoring.run()
 
 
-cli = click.CommandCollection(sources=[speller_group, monitoring_group])
+@click.group()
+def viewer_group():
+    pass
+
+
+@viewer_group.command()
+@click.argument("file", required=False)
+@click.option("--target", default=5, help="Target item")
+def viewer(file: str | None, target: int) -> None:
+    view_file(file, target)
+
+
+cli = click.CommandCollection(sources=[speller_group, monitoring_group, viewer_group])
 
 
 if __name__ == '__main__':
