@@ -19,7 +19,7 @@ class StrategySettings(BaseSettings):
     break_duration_ms: int = 100
 
     epoch_baseline_ms: Literal[200] = 200
-    epoch_size_samples: Literal[200] = 200
+    epoch_size_samples: Literal[201] = 201
 
     @field_validator('flash_duration_ms', 'break_duration_ms')
     @classmethod
