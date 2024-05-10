@@ -9,20 +9,7 @@ venv\Scripts\activate
 ```
 
 ### Run
-
-Run speller
+Use --help to get available commands
 ```shell
-python main.py speller
+python main.py --help
 ```
-
-Run monitoring:
-```shell
-python main.py monitoring
-```
-
-Run viewer:
-```shell
-python main.py viewer
-```
-
-You can also use the --help option for all commands to find out the available options and arguments.

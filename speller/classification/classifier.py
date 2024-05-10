@@ -45,5 +45,11 @@ class Classifier(IClassifier):
         pass
 
     def classify(self, epoch: EpochType) -> float:
+        # TODO: add baseline correction
+        # Correction is applied to each epoch and channel individually in the following way:
+        # - Calculate the mean signal of the baseline period.
+        # - Subtract this mean from the entire epoch.
+
+        # how baseline correction is related to StandardScaler?
         logger.debug("Classifier: called classify()")
         return random()

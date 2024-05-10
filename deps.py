@@ -4,6 +4,10 @@ from threading import Event
 from independency import Container, ContainerBuilder
 from independency.container import Dependency
 
+from preprocessing.model import Model
+from preprocessing.epoch_collector import EpochCollector
+from preprocessing.preprocessor import Preprocessor
+from preprocessing.settings import EpochCollectorSettings, ModelSettings, PreprocessorSettings
 from speller.data_aquisition.data_collector import IDataCollector, StubDataCollector, UnicornDataCollector
 from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.data_aquisition.recorder import IRecorder, Recorder
@@ -80,7 +84,6 @@ def get_monitoring_container(stub: bool = True, file: bool = False) -> Container
     builder = ContainerBuilder()
 
     builder.singleton(MonitoringSettings, lambda: MonitoringSettings())
-    # builder.singleton(FilesSettings, lambda: FilesSettings())
 
     if stub:
         if file:
@@ -94,5 +97,20 @@ def get_monitoring_container(stub: bool = True, file: bool = False) -> Container
 
     builder.singleton(IMonitoringCollector, MonitoringCollector)
     builder.singleton(MonitoringVisualizer, MonitoringVisualizer)
+
+    return builder.build()
+
+
+def get_model_container() -> Container:
+    builder = ContainerBuilder()
+
+    builder.singleton(FilesSettings, lambda: FilesSettings())
+    builder.singleton(PreprocessorSettings, lambda: PreprocessorSettings())
+    builder.singleton(EpochCollectorSettings, lambda: EpochCollectorSettings())
+    builder.singleton(ModelSettings, lambda: ModelSettings())
+
+    builder.singleton(Preprocessor, Preprocessor)
+    builder.singleton(EpochCollector, EpochCollector)
+    builder.singleton(Model, Model)
 
     return builder.build()
