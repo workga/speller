@@ -15,14 +15,15 @@ from speller.monitoring.monitoring_collector import IMonitoringCollector, Monito
 from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
+from speller.prediction.dictionary import Dictionary, IDictionary
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
-from speller.prediction.t9_predictor import IT9Predictor, StubT9Predictor, T9Predictor
+from speller.prediction.t9_predictor import IT9Predictor, T9Predictor
 from speller.session.command_decoder import CommandDecoder, ICommandDecoder
 from speller.session.flashing_strategy import IFlashingStrategy, SquareSingleCharacterFlashingStrategy
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
 from speller.session.speller_runner import SpellerRunner
 from speller.session.state_manager import IStateManager, StateManager
-from speller.settings import ExperimentSettings, FilesSettings, LoggingSettings, MonitoringSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
+from speller.settings import DictionarySettings, ExperimentSettings, FilesSettings, LoggingSettings, MonitoringSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
 from speller.view.speller_view import SpellerView
 
 
@@ -51,6 +52,7 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(ViewSettings, lambda: ViewSettings())
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
     builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
+    builder.singleton(DictionarySettings, lambda: DictionarySettings())
 
     builder.singleton(IRecorder, Recorder)
 
@@ -62,7 +64,8 @@ def get_speller_container(stub: bool = True) -> Container:
         builder.singleton(IDataCollector, UnicornDataCollector)
 
     builder.singleton(IClassifier, StubClassifier)
-    builder.singleton(IT9Predictor, StubT9Predictor)
+    builder.singleton(IDictionary, Dictionary)
+    builder.singleton(IT9Predictor, T9Predictor)
 
     builder.singleton(IEpochGetter, EpochGetter)
     builder.singleton(IFlashingStrategy, SquareSingleCharacterFlashingStrategy)

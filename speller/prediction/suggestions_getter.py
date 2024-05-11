@@ -22,4 +22,7 @@ class SuggestionsGetter(ISuggestionsGetter):
 
     def get_suggestions(self, text: str, prefix: Sequence[int], max_suggestions: int) -> Sequence[str]:
         logger.info("SuggestionsGetter: called get_suggestions")
-        return self._t9_predictor.predict(prefix, max_suggestions)
+        if prefix:
+            return self._t9_predictor.predict(prefix, max_suggestions)
+        else:
+            return []

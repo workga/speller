@@ -1,6 +1,8 @@
 import abc
-from itertools import islice
+from itertools import islice, product
 from typing import Iterator, Sequence
+
+from speller.prediction.dictionary import IDictionary
 
 
 T9_CHARS = [
@@ -10,29 +12,22 @@ T9_CHARS = [
 
 class IT9Predictor(abc.ABC):
     @abc.abstractmethod
-    def predict(self, prefix: Sequence[int], max_words: int | None = None) -> Sequence[str]:
+    def predict(self, prefix: Sequence[int], max_words: int) -> Sequence[str]:
         pass
-
-
-class StubT9Predictor(IT9Predictor):
-    def predict(self, prefix: Sequence[int], max_words: int | None = None) -> Sequence[str]:
-        def concat_recursivly(prefix: Sequence[int]) -> Iterator[str]:
-            if len(prefix) == 0:
-                return ""
-            elif len(prefix) == 1:
-                yield from T9_CHARS[prefix[0]]
-            else:
-                for char in T9_CHARS[prefix[0]]:
-                    for suffix in concat_recursivly(prefix[1:]):
-                        yield char + suffix
-        
-        return list(islice(concat_recursivly(prefix), max_words))
     
+
 class T9Predictor(IT9Predictor):
-    def predict(self, prefix: Sequence[int], max_words: int | None = None) -> Sequence[str]:
-        return []
-    
+    def __init__(self, dictionary: IDictionary):
+        self._dictionary = dictionary
 
+    def predict(self, prefix: Sequence[int], max_words: int) -> Sequence[str]:
+        prefixes_as_chars = product(*[T9_CHARS[i] for i in prefix])
+        prefixes_as_strings = [''.join(chars) for chars in prefixes_as_chars]
 
-# p = StubT9Predictor()
-# print(p.predict([0, 1, 2], 5))
+        words = self._dictionary.get_words(prefixes_as_strings, max_words)
+
+        if len(words) < max_words:
+            prefixes_as_strings.sort()
+            words.extend(prefixes_as_strings[: max_words - len(words)])
+
+        return words

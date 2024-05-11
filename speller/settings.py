@@ -13,7 +13,7 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 25
+    repetitions_count: int = 1
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -71,7 +71,7 @@ class ExperimentSettings(BaseSettings):
     name: str = 'gleb'
     comment: str = 'first_test'
     target: int = 5
-    cycles_count: int = 1
+    cycles_count: int = 60
 
     def __repr__(self) -> str:
         return f'name={self.name}__comment={self.comment}__target={self.target}'
@@ -138,3 +138,6 @@ class MonitoringSettings(BaseSettings):
     @cached_property
     def update_quality_interval_ms(self) -> int:
         return 1000 * self.quality_interval_samples // 250
+    
+class DictionarySettings(BaseSettings):
+    search_equal_words_in_secondary: bool = False
