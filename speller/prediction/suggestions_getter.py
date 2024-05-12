@@ -23,6 +23,9 @@ class SuggestionsGetter(ISuggestionsGetter):
     def get_suggestions(self, text: str, prefix: Sequence[int], max_suggestions: int) -> Sequence[str]:
         logger.info("SuggestionsGetter: called get_suggestions")
         if prefix:
+            # TODO:
+            # через словарь проверять, какие префиксы возможны, и использовать только чатГПТ, передавая ему возможные префиксы.
+            # проблема - чатбот плохо понимает, что нужно использовать префиксы
             return self._t9_predictor.predict(prefix, max_suggestions)
         else:
-            return []
+            return self._chat_gpt_predictor.predict(text, max_suggestions)

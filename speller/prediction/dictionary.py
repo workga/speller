@@ -15,6 +15,10 @@ class IDictionary(abc.ABC):
     def get_words(self, prefixes: list[str], max_words: int) -> list[str]:
         pass
 
+    @abc.abstractmethod
+    def get_possible_prefixes(self, prefixes: list[str]) -> list[str]:
+        pass
+
 
 class Dictionary(IDictionary):
     def __init__(self, settings: DictionarySettings):
@@ -80,7 +84,7 @@ class Dictionary(IDictionary):
     def get_words(self, prefixes: list[str], max_words: int) -> list[str]:
         # оригинальный Т9 подсказывает только слова с той же длиной, но мы поступим умнее:
         # если слов той же длины нашли меньше, чем нужно, то добавляем слова большей длины
-        # + еще есть варианты: искать ли слова той же длины еще и в большом словаре без частот или нет
+        # + еще есть варианты: искать ли слова той же длины дополнительно в большом словаре без частот или нет
         words = self._search_words(prefixes, max_words, only_equal=True)
         if len(words) == max_words:
             return words
@@ -92,3 +96,9 @@ class Dictionary(IDictionary):
                     break
         
         return words
+    
+    def _is_prefix_possible(self, prefix: str) -> bool:
+        return bool(next(self._secondary_trie.iterkeys(prefix), None))
+    
+    def get_possible_prefixes(self, prefixes: list[str]) -> list[str]:
+        return list(filter(self._is_prefix_possible, prefixes))

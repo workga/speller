@@ -19,6 +19,8 @@ pandas = "^2.2.1"
 pyqtgraph = "^0.13.7"
 pyqt6 = "^6.7.0"
 marisa-trie = "^1.1.1"
+gigachat = "^0.1.23"
+gigachain = "^0.1.17"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

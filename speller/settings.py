@@ -1,7 +1,7 @@
 from functools import cached_property
 from pathlib import Path
 from typing import Literal
-from pydantic import ValidationInfo, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 def samples_to_ms(samples: int) -> int:
@@ -141,3 +141,29 @@ class MonitoringSettings(BaseSettings):
     
 class DictionarySettings(BaseSettings):
     search_equal_words_in_secondary: bool = False
+
+class ChatGPTSettings(BaseSettings):
+    auth: str = ''
+
+    enabled: bool = True
+    use_pro: bool = False
+    template: str = (
+        'Какое слово самое вероятное после слов "{text}"?'
+        ' Предложи {count} самых вероятных вариантов из одного слова'
+        ' в порядке от самого вероятного в формате json'    
+    )
+    temperature: float = Field(0.8, ge=0, le=2)
+
+    @property
+    def model(self) -> str:
+        if self.use_pro:
+            return 'GigaChat-Pro'
+        return 'GigaChat'
+    
+    @field_validator('template')
+    @classmethod
+    def template_contains_keywords(cls, v: int, info: ValidationInfo) -> int:
+        assert '{count}' in v, f'{info.field_name} must contain "{{count\}}" keyword'
+        assert '{text}' in v, f'{info.field_name} must contain "{{text}}" keyword'
+        return v
+

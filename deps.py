@@ -13,6 +13,7 @@ from speller.data_aquisition.epoch_getter import EpochGetter, IEpochGetter
 from speller.data_aquisition.recorder import IRecorder, Recorder
 from speller.monitoring.monitoring_collector import IMonitoringCollector, MonitoringCollector
 from speller.monitoring.visualizer import MonitoringVisualizer
+from speller.prediction.chat_gpt_client import ChatGPTClient
 from speller.prediction.chat_gpt_predictor import ChatGptPredictor, IChatGptPredictor
 from speller.classification.classifier import Classifier, IClassifier, StubClassifier
 from speller.prediction.dictionary import Dictionary, IDictionary
@@ -23,7 +24,7 @@ from speller.session.flashing_strategy import IFlashingStrategy, SquareSingleCha
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
 from speller.session.speller_runner import SpellerRunner
 from speller.session.state_manager import IStateManager, StateManager
-from speller.settings import DictionarySettings, ExperimentSettings, FilesSettings, LoggingSettings, MonitoringSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
+from speller.settings import ChatGPTSettings, DictionarySettings, ExperimentSettings, FilesSettings, LoggingSettings, MonitoringSettings, StateManagerSettings, StrategySettings, StubDataCollectorSettings, UnicornDataCollectorSettings, ViewSettings
 from speller.view.speller_view import SpellerView
 
 
@@ -53,6 +54,7 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
     builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
     builder.singleton(DictionarySettings, lambda: DictionarySettings())
+    builder.singleton(ChatGPTSettings, lambda: ChatGPTSettings())
 
     builder.singleton(IRecorder, Recorder)
 
@@ -64,12 +66,15 @@ def get_speller_container(stub: bool = True) -> Container:
         builder.singleton(IDataCollector, UnicornDataCollector)
 
     builder.singleton(IClassifier, StubClassifier)
+
     builder.singleton(IDictionary, Dictionary)
     builder.singleton(IT9Predictor, T9Predictor)
+    
+    builder.singleton(ChatGPTClient, ChatGPTClient)
+    builder.singleton(IChatGptPredictor, ChatGptPredictor)
 
     builder.singleton(IEpochGetter, EpochGetter)
     builder.singleton(IFlashingStrategy, SquareSingleCharacterFlashingStrategy)
-    builder.singleton(IChatGptPredictor, ChatGptPredictor)
     builder.singleton(ISuggestionsGetter, SuggestionsGetter)
 
     builder.singleton(IStateManager, StateManager, shutdown_event=Dependency(SpellerContainerKey.SHUTDOWN_EVENT))
