@@ -19,6 +19,7 @@ from speller.classification.classifier import Classifier, IClassifier, StubClass
 from speller.prediction.dictionary import Dictionary, IDictionary
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
 from speller.prediction.t9_predictor import IT9Predictor, T9Predictor
+from speller.secrets import ChatGPTSecretsSettings
 from speller.session.command_decoder import CommandDecoder, ICommandDecoder
 from speller.session.flashing_strategy import IFlashingStrategy, SquareSingleCharacterFlashingStrategy
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
@@ -55,6 +56,7 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
     builder.singleton(DictionarySettings, lambda: DictionarySettings())
     builder.singleton(ChatGPTSettings, lambda: ChatGPTSettings())
+    builder.singleton(ChatGPTSecretsSettings, lambda: ChatGPTSecretsSettings())
 
     builder.singleton(IRecorder, Recorder)
 

@@ -89,7 +89,7 @@ class FilesSettings(BaseSettings):
 class ViewSettings(BaseSettings):
     update_interval_ms: int = 1
     font_size: int = 14
-    keyboard_items_scale: float = 1.4
+    keyboard_items_scale: float = 0.8
 
     screen_width: int = 1920
     screen_height: int = 1080
@@ -143,9 +143,7 @@ class DictionarySettings(BaseSettings):
     search_equal_words_in_secondary: bool = False
 
 class ChatGPTSettings(BaseSettings):
-    auth: str = ''
-
-    enabled: bool = True
+    enabled: bool = False
     use_pro: bool = False
     template: str = (
         'Какое слово самое вероятное после слов "{text}"?'

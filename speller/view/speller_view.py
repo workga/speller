@@ -101,7 +101,7 @@ class SpellerView:
         self._suggestions_field = Label(self._suggestions_frame, text='', anchor='nw', justify='left', bg=Color.LIGHT_GRAY, fg=Color.BLACK, font=self._font)
         self._suggestions_field.pack(fill='both', expand=True, padx=self._field_pad, pady=(0, self._field_pad))
 
-        self._keyboard_frame = Frame(self._speller_frame, bg=Color.BLACK)
+        self._keyboard_frame = Frame(self._speller_frame, bg=Color.LIGHT_GRAY)
         self._keyboard_frame.grid(row=1, column=0, padx=(0, self._frame_pad), pady=(self._frame_pad, 0), sticky="nsew")
         self._initialize_keyboard()
 
@@ -117,7 +117,6 @@ class SpellerView:
     def _initialize_controll_window(self) -> None:
         self._controll_window = Toplevel(self._window)
         self._controll_window.protocol("WM_DELETE_WINDOW", self._shutdown)
-        # self._controll_window.geometry("100x100")
 
         self._controll_frame = Frame(self._controll_window, bg=Color.LIGHT_GRAY)
         self._controll_frame.pack(fill='both', expand=True)
@@ -161,7 +160,7 @@ class SpellerView:
         for i, j in product(range(size), range(size)):
             image = self._load_images(pattern.format(i, j), self._view_settings.keyboard_items_scale)
             self._keyboard_images[i][j] = image
-            label = Label(self._keyboard_frame, image=image, borderwidth=0)
+            label = Label(self._keyboard_frame, image=image, border=0)
             self._keyboard_labels[i][j] = label
             label.grid(row=i, column=j)
 

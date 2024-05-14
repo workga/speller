@@ -12,6 +12,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from sklearn.metrics import max_error
+from speller.secrets import ChatGPTSecretsSettings
 from speller.settings import ChatGPTSettings
 
 
@@ -19,9 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class ChatGPTClient:
-    def __init__(self, settings: ChatGPTSettings):
+    def __init__(self, settings: ChatGPTSettings, secrets_settings: ChatGPTSecretsSettings):
         self._settings = settings
-        self._client = GigaChat(credentials=settings.auth, verify_ssl_certs=False)
+        self._secrets_settings = secrets_settings
+        self._client = GigaChat(credentials=secrets_settings.auth, verify_ssl_certs=False)
     
     def predict(self, text: str, max_words: int, prefixes: list[str] | None = None) -> Sequence[str]:
         if not self._settings.enabled:
