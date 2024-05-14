@@ -12,7 +12,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from sklearn.metrics import max_error
-from speller.secrets import ChatGPTSecretsSettings
+from speller.secrets_settings import ChatGPTSecretsSettings
 from speller.settings import ChatGPTSettings
 
 

@@ -19,7 +19,7 @@ from speller.classification.classifier import Classifier, IClassifier, StubClass
 from speller.prediction.dictionary import Dictionary, IDictionary
 from speller.prediction.suggestions_getter import ISuggestionsGetter, SuggestionsGetter
 from speller.prediction.t9_predictor import IT9Predictor, T9Predictor
-from speller.secrets import ChatGPTSecretsSettings
+from speller.secrets_settings import ChatGPTSecretsSettings
 from speller.session.command_decoder import CommandDecoder, ICommandDecoder
 from speller.session.flashing_strategy import IFlashingStrategy, SquareSingleCharacterFlashingStrategy
 from speller.session.sequence_handler import ISequenceHandler, SequenceHandler
