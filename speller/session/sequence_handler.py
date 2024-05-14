@@ -63,7 +63,7 @@ class SequenceHandler(ISequenceHandler):
         logger.debug("SequnceHandler: running state updater")
         # t = Timer()
 
-        next_time = start_time + self._strategy_settings.epoch_baseline_s
+        next_time = start_time + self._strategy_settings.wait_s + self._strategy_settings.epoch_baseline_s
         time.sleep(max(0, next_time - time.monotonic()))
         for flashing_list in flashing_sequence:
             self._state_manager.set_flashing_list(flashing_list)

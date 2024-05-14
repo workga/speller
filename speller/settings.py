@@ -13,7 +13,8 @@ def ms_to_samples(ms: int) -> int:
 
 class StrategySettings(BaseSettings):
     keyboard_size: int = 4
-    repetitions_count: int = 1
+    repetitions_count: int = 25
+    wait_ms: int = 9000
 
     flash_duration_ms: int = 60
     break_duration_ms: int = 100
@@ -21,7 +22,7 @@ class StrategySettings(BaseSettings):
     epoch_baseline_ms: Literal[200] = 200
     epoch_size_samples: Literal[201] = 201
 
-    @field_validator('flash_duration_ms', 'break_duration_ms')
+    @field_validator('flash_duration_ms', 'break_duration_ms', 'wait_ms')
     @classmethod
     def value_is_multiple_of_four(cls, v: int, info: ValidationInfo) -> int:
         assert v % 4 == 0, f'{info.field_name} must be a multiple of 4!'
@@ -54,6 +55,13 @@ class StrategySettings(BaseSettings):
     def epoch_baseline_s(self):
         return self.epoch_baseline_ms / 1000
     
+    @cached_property
+    def wait_s(self):
+        return self.wait_ms / 1000
+    
+    @cached_property
+    def wait_samples(self):
+        return ms_to_samples(self.wait_ms)
 
     def get_flashing_samples_indexes(self, number: int) -> list[int]:
         index = ms_to_samples(self.epoch_baseline_ms)
@@ -65,13 +73,13 @@ class StrategySettings(BaseSettings):
         return indexes
     
     def get_number_of_samples(self, number_of_epoches) -> int:
-        return self.epoch_size_samples + (number_of_epoches - 1) * self.epoch_interval_samples
+        return self.wait_samples + self.epoch_size_samples + (number_of_epoches - 1) * self.epoch_interval_samples
 
 class ExperimentSettings(BaseSettings):
-    name: str = 'gleb'
-    comment: str = 'first_test'
+    name: str = 'default'
+    comment: str = 'test'
     target: int = 5
-    cycles_count: int = 60
+    cycles_count: int = 1
 
     def __repr__(self) -> str:
         return f'name={self.name}__comment={self.comment}__target={self.target}'

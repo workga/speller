@@ -1,4 +1,5 @@
 import abc
+from itertools import islice
 import logging
 import time
 from typing import Iterator, Sequence
@@ -32,6 +33,8 @@ class EpochGetter(IEpochGetter):
         sample_generator = self._data_collector.collect(number_of_samples)
 
         # print(f'{number_of_samples=}')
+
+        list(islice(sample_generator, self._strategy_settings.wait_samples))
 
         current_epoch = []
         for _ in range(self._strategy_settings.epoch_size_samples):
