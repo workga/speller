@@ -5,7 +5,7 @@ NON_TARGET_MARKER = 2
 
 
 class PreprocessorSettings(BaseSettings):
-    crop_time_s: float = 9
+    crop_time_s: float = 0.
     lower_passband_frequency: float = 0.1
     upper_passband_frequency: float = 15.
     notch_filter_length: str = "10s"
