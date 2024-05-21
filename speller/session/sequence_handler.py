@@ -4,6 +4,7 @@ from multiprocessing.pool import ThreadPool
 import time
 from speller.classification.classifier import IClassifier
 from speller.data_aquisition.epoch_getter import IEpochGetter
+from speller.session.command_decoder import ICommandDecoder
 from speller.session.entity import FlashingSequenceType, ItemPositionType
 from speller.session.flashing_strategy import IFlashingStrategy
 from speller.session.state_manager import IStateManager
@@ -26,12 +27,14 @@ class SequenceHandler(ISequenceHandler):
         epoch_getter: IEpochGetter,
         classifier: IClassifier,
         flashing_strategy: IFlashingStrategy,
+        command_decoder: ICommandDecoder,
         state_manager: IStateManager,
         strategy_settings: StrategySettings,
     ):
         self._epoch_getter = epoch_getter
         self._classifier = classifier
         self._flashing_strategy = flashing_strategy
+        self._command_decoder = command_decoder
         self._state_manager = state_manager
         self._strategy_settings = strategy_settings
 
@@ -52,7 +55,12 @@ class SequenceHandler(ISequenceHandler):
             raise RuntimeError("SequnceHandler: run out of epochs")
 
         logger.info("SequnceHandler: finishing handling sequence")
-        return self._flashing_strategy.predict_item_position(flashing_sequence, probabilities)
+        predicted_item_position = self._flashing_strategy.predict_item_position(flashing_sequence, probabilities)
+    
+        logger.debug("SequnceHandler: got position=%s", predicted_item_position)
+        command = self._command_decoder.decode_command(predicted_item_position)
+        logger.info("SequnceHandler: got command %s", command)
+        self._state_manager.handle_command(command)
     
     def _run_state_updater(self, flashing_sequence: FlashingSequenceType, start_time: float):
         if self._future:

@@ -11,6 +11,7 @@ from preprocessing.epoch_collector import EpochCollector
 from preprocessing.files import get_preprocessed_files, get_raw_files
 from preprocessing.preprocessor import Preprocessor
 from preprocessing.collect_epochs_speller import view_file
+from preprocessing.settings import ModelSettings
 from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import FilesSettings, LoggingSettings
@@ -79,7 +80,8 @@ def preprocessor_group():
 @preprocessor_group.command()
 @click.argument("name")
 @click.argument("iter")
-def preprocessor(name: str, iter: int) -> None:
+@click.option("--view", is_flag=True, show_default=True, default=False)
+def preprocessor(name: str, iter: int, view: bool) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -89,7 +91,7 @@ def preprocessor(name: str, iter: int) -> None:
     
     file = glob.glob(f"{files_settings.records_dir}\\*name={name}*comment=iter_{iter}*")[0]
 
-    raw = preprocessor.preprocess(file)
+    raw = preprocessor.preprocess(file, save=not view)
     epochs = epoch_collector.collect(raw)
     epoch_collector.plot_comparison(epochs)
 
@@ -126,7 +128,8 @@ def fit_model_group():
 @fit_model_group.command()
 @click.option("--name", required=False, help="Filter by name")
 @click.option("--raw", is_flag=True, show_default=True, default=False, help="Use raw files without annotations")
-def fit_model(raw: bool, name: str | None) -> None:
+@click.option("--stats", is_flag=True, show_default=True, default=False)
+def fit_model(raw: bool, name: str | None, stats: bool) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -140,7 +143,7 @@ def fit_model(raw: bool, name: str | None) -> None:
         files = get_preprocessed_files(files_settings.records_dir, name)
     
     epochs = epoch_collector.collect_many(files)
-    model.fit(epochs)
+    model.fit(epochs, stats=stats)
 
 
 

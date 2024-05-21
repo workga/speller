@@ -58,7 +58,7 @@ class Preprocessor:
         raw.plot(duration=self._DURATION_TIME, scalings=self._SCALING_VOLTS, block=True)  # DATA LOSS (annotate 'bad')
         return raw
 
-    def preprocess(self, src_file: str, silent: bool = False) -> mne.io.RawArray:
+    def preprocess(self, src_file: str, silent: bool = False, save: bool = True) -> mne.io.RawArray:
         eeg_data = self._read_file(src_file)
         info = self._create_info()
 
@@ -68,6 +68,7 @@ class Preprocessor:
             raw = self._annotate(raw)
 
             time_str = datetime.now().strftime(self._files_settings.time_format)
-            raw.save((src_file + f'__[PREPROCESSED]__{time_str}__eeg.fif'))
+            if save:
+                raw.save((src_file + f'__[PREPROCESSED]__{time_str}__eeg.fif'))
 
         return raw

@@ -43,9 +43,19 @@ class ChatGPTClient:
         content = result.choices[0].message.content
         logger.info("Answer from ChatGPT: %s", content)
 
-        words = re.findall('\w+', content.lower())
-        if len(words) > max_words:
-            logger.warn("Expected %d words, got %d", max_words, len(words))
-            words = words[:max_words]
+        try:
+            if all(str(i) in content for i in range(1, max_words + 1)):
+                options = [' '.join(re.findall(r'([а-я]+)', line.lower())) for line in content.splitlines()]
+            else:
+                options: list[str] = json.loads(content)
+
+            words = [option.lower().removeprefix(text).split(' ', 1)[0] for option in options]
+            words = list(set(filter(lambda word: text[:-1] not in word, words)))
+            if len(words) > max_words:
+                logger.warn("Expected %d words, got %d", max_words, len(words))
+                words = words[:max_words]
+        except:
+            logger.exception('Can not parse ChatGPT response %s to text %s', content, text)
+            return []
 
         return words

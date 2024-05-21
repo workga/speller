@@ -78,7 +78,7 @@ class StrategySettings(BaseSettings):
 class ExperimentSettings(BaseSettings):
     name: str = 'default'
     comment: str = 'test'
-    target: int = 5
+    target: int = 5 # 11, 2, 14, 6, 8, 1
     cycles_count: int = 1
 
     def __repr__(self) -> str:
@@ -104,7 +104,7 @@ class ViewSettings(BaseSettings):
     fullscreen: bool = True
 
 class LoggingSettings(BaseSettings):
-    level: str = 'WARNING'
+    level: str = 'INFO'
 
 class StateManagerSettings(BaseSettings):
     max_suggestions: int = 6
@@ -152,11 +152,12 @@ class DictionarySettings(BaseSettings):
 
 class ChatGPTSettings(BaseSettings):
     enabled: bool = False
-    use_pro: bool = False
+    use_pro: bool = True
     template: str = (
-        'Какое слово самое вероятное после слов "{text}"?'
-        ' Предложи {count} самых вероятных вариантов из одного слова'
-        ' в порядке от самого вероятного в формате json'    
+        ' Продолжи фразу "{text}..."?'
+        ' Предложи {count} различных вариантов.'
+        ' Верни список вариантов в формате json.'
+        ' Используй русский язык. Не добавляй никаких вводных конструкций.'
     )
     temperature: float = Field(0.8, ge=0, le=2)
 

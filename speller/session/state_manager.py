@@ -1,12 +1,14 @@
 import abc
 from dataclasses import dataclass
 from datetime import datetime
+from functools import singledispatchmethod
 import logging
 from threading import Event
 from typing import Sequence
 from speller.prediction.suggestions_getter import ISuggestionsGetter
 
 from speller.prediction.t9_predictor import T9_CHARS
+from speller.session.command_decoder import BaseCommand, InputCancelCommand, InputClearCommand, InputSuggestionCommand, InputT9Command
 from speller.session.entity import FlashingListType
 from speller.settings import ExperimentSettings, StateManagerSettings, StrategySettings
 
@@ -70,19 +72,7 @@ class IStateManager(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def t9_input(self, charset_number: int) -> None:
-        pass
-
-    @abc.abstractmethod
-    def suggestion_input(self, suggestion_number: int) -> None:
-        pass
-
-    @abc.abstractmethod
-    def clear_input(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    def cancel_input(self) -> None:
+    def handle_command(self, command: BaseCommand) -> None:
         pass
     
 
@@ -102,6 +92,7 @@ class StateManager(IStateManager):
         self._history: list[HistoryState] = []
         self._initialize()
         self.info = ""
+        self.info_counter = 1
         self.is_session_running: Event = Event()
 
         self.session_name = self._experiment_settings.name
@@ -170,8 +161,9 @@ class StateManager(IStateManager):
     def _update_suggestions(self):
         self.suggestions = self._suggestions_getter.get_suggestions(self.text, self.prefix, self._settings.max_suggestions)
     
-    def t9_input(self, charset_number: int) -> None:
-        self.info = f'T9 {T9_CHARS[charset_number].upper()}'
+    def _t9_input(self, charset_number: int) -> None:
+        self.info = f'{self.info_counter}. T9 {T9_CHARS[charset_number].upper()}'
+        self.info_counter += 1
 
         self.preselected_clear = False
         self.preselected_cancel = False
@@ -181,17 +173,19 @@ class StateManager(IStateManager):
 
 
         self._history.append(self._history_state)
-        logger.info("StateManager: t9_input, new state: %s", self._history_state)
+        logger.info("StateManager: _t9_input, new state: %s", self._history_state)
 
-    def suggestion_input(self, suggestion_number: int) -> None:
+    def _suggestion_input(self, suggestion_number: int) -> None:
         self.preselected_clear = False
         self.preselected_cancel = False
 
         if suggestion_number >= len(self.suggestions):
             logger.info("StateManager: suggestion_number is big, skip it")
-            self.info = f'ВАРИАНТ {suggestion_number + 1} НЕДОСТУПЕН'
+            self.info = f'{self.info_counter}. ВАРИАНТ {suggestion_number + 1} НЕДОСТУПЕН'
+            self.info_counter += 1
             return
-        self.info = f'ВАРИАНТ {suggestion_number + 1}' 
+        self.info = f'{self.info_counter}. ВАРИАНТ {suggestion_number + 1}'
+        self.info_counter += 1
         
         self.text += self.suggestions[suggestion_number] + " "
         self.prefix = []
@@ -201,29 +195,51 @@ class StateManager(IStateManager):
         self._history.append(self._history_state)
         logger.info("StateManager: suggestions_input, new state: %s", self._history_state)
 
-    def clear_input(self) -> None:
+    def _clear_input(self) -> None:
         self.preselected_cancel = False
         if not self.preselected_clear:
             self.preselected_clear = True
-            self.info = f'ПОВТОРИТЕ СБРОС' 
-            logger.info("StateManager: clear_input, preselect, new state: %s", self._history_state)
+            self.info = f'{self.info_counter}. ПОВТОРИТЕ СБРОС' 
+            logger.info("StateManager: _clear_input, preselect, new state: %s", self._history_state)
         else:
             self._initialize()
             self._history.append(self._history_state)
-            self.info = f'СБРОС'
-            logger.info("StateManager: clear_input, clear, new state: %s", self._history_state)
+            self.info = f'{self.info_counter}. СБРОС'
+            logger.info("StateManager: _clear_input, clear, new state: %s", self._history_state)
+        self.info_counter += 1
 
-    def cancel_input(self) -> None:
+    def _cancel_input(self) -> None:
         self.preselected_clear = False
         if not self.preselected_cancel:
             self.preselected_cancel = True
-            self.info = f'ПОВТОРИТЕ ОТМЕНА' 
-            logger.info("StateManager: cancel_input, preselected, new state: %s", self._history_state)
+            self.info = f'{self.info_counter}. ПОВТОРИТЕ ОТМЕНА' 
+            logger.info("StateManager: _cancel_input, preselected, new state: %s", self._history_state)
         else:
             self.preselected_cancel = False
             self._cancel()
-            self.info = f'ОТМЕНА' 
-            logger.info("StateManager: cancel_input, cancel, new state: %s", self._history_state)
+            self.info = f'{self.info_counter}. ОТМЕНА' 
+            logger.info("StateManager: _cancel_input, cancel, new state: %s", self._history_state)
+        self.info_counter += 1
+
+    @singledispatchmethod
+    def handle_command(self, command: BaseCommand) -> None:
+        raise RuntimeError(f"Unknown command type {command}!")
+    
+    @handle_command.register
+    def _handle_input_t9_command(self, command: InputT9Command) -> None:
+        self._t9_input(command.charset_number)
+
+    @handle_command.register
+    def _handle_input_suggestion_command(self, command: InputSuggestionCommand) -> None:
+        self._suggestion_input(command.suggestion_number)
+
+    @handle_command.register
+    def _handle_input_clear_command(self, command: InputClearCommand) -> None:
+        self._clear_input()
+
+    @handle_command.register
+    def _handle_input_cancel_command(self, command: InputCancelCommand) -> None:
+        self._cancel_input()
     
         
 
