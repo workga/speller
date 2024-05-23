@@ -1,4 +1,6 @@
+from functools import cached_property
 from pydantic_settings import BaseSettings
+
 
 TARGET_MARKER = 7
 NON_TARGET_MARKER = 2
@@ -12,13 +14,22 @@ class PreprocessorSettings(BaseSettings):
 
 
 class EpochCollectorSettings(BaseSettings):
-    epoch_pre_time_s: float = -0.2
-    epoch_post_time_s: float = 0.6
+    epoch_pre_time_ms: int = -200
+    epoch_post_time_ms: int = 600
     baseline_start_s: float | None = None
     baseline_end_s: float | None = 0
 
     equalize_events: bool = True  # крепко подумать!  # если False, то обязательно stratify
     equilize_events_method: str = ('truncate', 'mintime')[0]  # крепко подумать!
+
+    @cached_property
+    def epoch_pre_time_s(self) -> float:
+        return self.epoch_pre_time_ms / 1000
+    
+    @cached_property
+    def epoch_post_time_s(self) -> float:
+        return self.epoch_post_time_ms / 1000
+
 
 
 class ModelSettings(BaseSettings):

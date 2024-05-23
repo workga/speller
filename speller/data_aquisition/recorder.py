@@ -1,5 +1,6 @@
 import abc
 from collections import deque
+from copy import deepcopy
 from enum import Enum
 import os
 from pathlib import Path
@@ -72,7 +73,7 @@ class Recorder(abc.ABC):
         return ",".join(map(str, sample + [flash, item]))
     
     def record_samples(self, samples: Sequence[DataSampleType]) -> None:
-        self._samples_queue.appendleft(samples)
+        self._samples_queue.appendleft(deepcopy(samples))
         self._record()
 
     def record_flashing_sequence(self, flashing_sequence: FlashingSequenceType) -> None:

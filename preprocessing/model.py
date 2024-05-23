@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import mne
 import numpy as np
 from sklearn import metrics
-from sklearn.base import ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.model_selection import ShuffleSplit, cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -27,6 +27,16 @@ class Data:
 class Dataset:
     train: Data
     test: Data
+
+
+class ClassifierModel:
+    def __init__(self, clf: SVC, scaler: StandardScaler):
+        self._clf = clf
+        self._scaler = scaler
+
+    def predict(self, epochs: np.ndarray) -> list[float]:
+        epochs = self._scaler.transform(epochs)
+        return self._clf.predict(epochs).tolist()
 
 
 class Model:
@@ -124,5 +134,9 @@ class Model:
         # ) as f:
         #     return pickle.load(f)
 
-    def load(self) -> None:
+    def load(self) -> ClassifierModel:
         pass
+        # with open(
+        #     os.path.join(self._files_settings.static_dir, self._files_settings.classifier_model_filename), "rb"
+        # ) as f:
+        #     return pickle.load(f)

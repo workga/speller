@@ -57,6 +57,8 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(DictionarySettings, lambda: DictionarySettings())
     builder.singleton(ChatGPTSettings, lambda: ChatGPTSettings())
     builder.singleton(ChatGPTSecretsSettings, lambda: ChatGPTSecretsSettings())
+    builder.singleton(PreprocessorSettings, lambda: PreprocessorSettings())
+    builder.singleton(EpochCollectorSettings, lambda: EpochCollectorSettings())
 
     builder.singleton(IRecorder, Recorder)
 
@@ -75,6 +77,8 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(ChatGPTClient, ChatGPTClient)
     builder.singleton(IChatGptPredictor, ChatGptPredictor)
 
+    builder.singleton(Preprocessor, Preprocessor)
+    builder.singleton(EpochCollector, EpochCollector)
     builder.singleton(IEpochGetter, EpochGetter)
     builder.singleton(IFlashingStrategy, SquareSingleCharacterFlashingStrategy)
     builder.singleton(ISuggestionsGetter, SuggestionsGetter)

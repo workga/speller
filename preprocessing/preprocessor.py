@@ -1,7 +1,8 @@
 from functools import partial
 import re
-from typing import Any
+from typing import Any, Sequence
 import mne
+import numpy as np
 from numpy import ndarray
 import pandas as pd
 from datetime import datetime
@@ -72,3 +73,25 @@ class Preprocessor:
                 raw.save((src_file + f'__[PREPROCESSED]__{time_str}__eeg.fif'))
 
         return raw
+    
+    def preprocess_samples(self, samples: Sequence[Sequence[float]]) -> Sequence[Sequence[float]]:
+        samples = np.array(samples)
+        samples *= self._ORIGIN_UNITS_TO_VOLTS_FACTOR
+        samples = samples.transpose()
+
+        samples = mne.filter.filter_data(
+            samples,
+            sfreq=self._FREQUENCY,
+            l_freq=self._settings.lower_passband_frequency,
+            h_freq=self._settings.upper_passband_frequency,
+        )
+        samples = mne.filter.notch_filter(
+            samples,
+            self._FREQUENCY,
+            freqs=50,
+            method='spectrum_fit',
+            filter_length=self._settings.notch_filter_length,
+        )
+        
+        samples = samples.transpose()
+        return samples.tolist()

@@ -6,8 +6,10 @@ import pickle
 from random import random
 from typing import Sequence
 
+import numpy as np
 from sklearn.svm import SVC
 
+from preprocessing.model import ClassifierModel, Model
 from speller.data_aquisition.data_collector import DataSampleType
 from speller.data_aquisition.epoch_getter import EpochType
 from speller.settings import FilesSettings
@@ -18,38 +20,21 @@ logger = logging.getLogger(__name__)
 
 class IClassifier(abc.ABC):
     @abc.abstractmethod
-    def classify(self, epoch: EpochType) -> float:  # returns bool or probability
+    def classify(self, epochs: np.ndarray) -> list[float]:  # returns bools or probabilities
         pass
 
 
 class StubClassifier(IClassifier):
-    def classify(self, epoch: EpochType) -> float:
+    def classify(self, epochs: np.ndarray) -> list[float]:
         logger.debug("StubClassifier: called classify()")
-        return random()
+        return [1 if random() >= 0.5 else 0 for _ in epochs]
     
 
 class Classifier(IClassifier):
-    _ORIGIN_UNITS_TO_VOLTS_FACTOR = 1e-6
-
-    def __init__(self, files_settings: FilesSettings):
+    def __init__(self, files_settings: FilesSettings, model: Model):
         self._files_settings = files_settings
-        self._model = self._load_model()
+        self._clf_model = model.load()
 
-    def _load_model(self) -> SVC:
-        with open(
-            os.path.join(self._files_settings.static_dir, self._files_settings.classifier_model_filename), "rb"
-        ) as f:
-            return pickle.load(f)
-
-    def preprocess_data(raw: Sequence[DataSampleType]) -> Sequence[DataSampleType]:
-        pass
-
-    def classify(self, epoch: EpochType) -> float:
-        # TODO: add baseline correction
-        # Correction is applied to each epoch and channel individually in the following way:
-        # - Calculate the mean signal of the baseline period.
-        # - Subtract this mean from the entire epoch.
-
-        # how baseline correction is related to StandardScaler?
+    def classify(self, epochs: np.ndarray) -> list[float]:
         logger.debug("Classifier: called classify()")
-        return random()
+        return self._clf_model.predict(epochs)

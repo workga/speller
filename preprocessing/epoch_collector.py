@@ -1,7 +1,9 @@
+from typing import Sequence
 import mne
+import numpy as np
 
 from preprocessing.settings import NON_TARGET_MARKER, TARGET_MARKER, EpochCollectorSettings
-from speller.settings import FilesSettings
+from speller.settings import FilesSettings, samples_to_ms
 
 
 class EpochCollector:
@@ -57,3 +59,14 @@ class EpochCollector:
         result_epochs = mne.concatenate_epochs(all_epochs)
         print("Collected epochs: ", len(result_epochs))
         return result_epochs
+    
+    def preprocess_epochs(self, epochs: Sequence[Sequence[float]]) -> np.ndarray:
+        epochs = np.array(epochs)
+        epochs = epochs.transpose((0, 2, 1))
+        
+        times_range_ms =  range(self._settings.epoch_pre_time_ms, self._settings.epoch_post_time_ms + 1, samples_to_ms(1))
+        times_s = np.array([int(ms * 1000) for ms in times_range_ms])
+        
+        epochs = mne.baseline.rescale(epochs, times_s, (self._settings.baseline_start_s, self._settings.baseline_end_s))
+        epochs = epochs.reshape(len(epochs), -1)
+        return epochs
