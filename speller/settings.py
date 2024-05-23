@@ -89,10 +89,17 @@ class FilesSettings(BaseSettings):
     keyboard_items_pattern: str = 'keyboard_item_{}_{}'
     keyboard_flash_item_filename: str = 'keyboard_item_flash'
 
-    classifier_model_filename: str = 'classifier_model.pickle'
-    records_dir: Path = Path("./records")
     time_format: str = '%Y_%m_%d__%H_%M_%S'
+    
+    records_dir: Path = Path("./records")
     record_pattern: str = 'record__{}__{}.csv'
+
+    models_dir: Path = Path("./models")
+    model_pattern: str = 'model__{}__{}.pickle'
+
+    clf_name: str | None = None
+    clf_comment: str | None = None
+
 
 class ViewSettings(BaseSettings):
     update_interval_ms: int = 1

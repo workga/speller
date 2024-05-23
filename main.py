@@ -8,7 +8,7 @@ from deps import get_monitoring_container, get_model_container, get_speller_cont
 
 from preprocessing.model import Model
 from preprocessing.epoch_collector import EpochCollector
-from preprocessing.files import get_preprocessed_files, get_raw_files
+from preprocessing.files import get_model_filename, get_preprocessed_files, get_raw_files
 from preprocessing.preprocessor import Preprocessor
 from preprocessing.collect_epochs_speller import view_file
 from preprocessing.settings import ModelSettings
@@ -28,10 +28,12 @@ def speller_group():
 
 @speller_group.command()
 @click.option("--stub", is_flag=True, show_default=True, default=False, help="Use stub dependencies")
-def speller(stub: bool) -> None:
+@click.option("--clf-name", required=False)
+@click.option("--clf-comment", required=False)
+def speller(stub: bool, clf_name: str | None, clf_comment: str | None) -> None:
     # import sys
     # sys.setswitchinterval(0.001)
-    container = get_speller_container(stub)
+    container = get_speller_container(stub, clf_name, clf_comment)
 
     logging.basicConfig(level=container.resolve(LoggingSettings).level)
 
@@ -129,7 +131,9 @@ def fit_model_group():
 @click.option("--name", required=False, help="Filter by name")
 @click.option("--raw", is_flag=True, show_default=True, default=False, help="Use raw files without annotations")
 @click.option("--stats", is_flag=True, show_default=True, default=False)
-def fit_model(raw: bool, name: str | None, stats: bool) -> None:
+@click.option("--save", is_flag=True, show_default=True, default=False)
+@click.option("--comment", required=False, help="Comment for model filename")
+def fit_model(raw: bool, name: str | None, stats: bool, save: bool, comment: str | None) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -143,8 +147,26 @@ def fit_model(raw: bool, name: str | None, stats: bool) -> None:
         files = get_preprocessed_files(files_settings.records_dir, name)
     
     epochs = epoch_collector.collect_many(files)
-    model.fit(epochs, stats=stats)
+    clf_model = model.fit(epochs, stats=stats)
+    if save:
+        filename = get_model_filename(files_settings, name, comment)
+        model.save(clf_model, filename)
+        print(f'ClassifierModel saved as {filename}')
 
+
+@click.group()
+def statistical_emulator_group():
+    pass
+
+
+@statistical_emulator_group.command()
+@click.argument("prob_tp")
+@click.argument("prob_tn")
+@click.argument("treshold", default=0.99)
+@click.argument("min_n", default=1)
+@click.argument("max_n", default=25)
+def statistical_emulator(prob_tp: float, prob_tn: float, treshold: float, min_n: int, max_n: int) -> None:
+    pass
 
 
 cli = click.CommandCollection(
@@ -155,6 +177,7 @@ cli = click.CommandCollection(
         preprocessor_group,
         epoch_collector_group,
         fit_model_group,
+        statistical_emulator_group,
     ]
 )
 

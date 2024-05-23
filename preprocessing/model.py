@@ -1,13 +1,11 @@
-
-
 from dataclasses import dataclass
-import os
-from re import I
+from pathlib import Path
+import pickle
 from matplotlib import pyplot as plt
 import mne
 import numpy as np
 from sklearn import metrics
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import ClassifierMixin
 from sklearn.model_selection import ShuffleSplit, cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -56,7 +54,6 @@ class Model:
         X = X.reshape(len(X), -1)
         y = np.concatenate(y)
 
-        # тут хотелось бы для обучающей иметь поровну разных стимулов, а для тестовой не 
         if split:
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, stratify=y, test_size=self._settings.test_proportion, random_state=self._settings.random_seed
@@ -106,7 +103,7 @@ class Model:
         )
         plt.show()
     
-    def fit(self, epochs: mne.Epochs, stats: bool = False, save: bool = False) -> None:
+    def fit(self, epochs: mne.Epochs, stats: bool = False) -> ClassifierModel | None:
         if self._settings.downsample_freq:
             epochs.resample(self._settings.downsample_freq)
 
@@ -123,20 +120,13 @@ class Model:
         else:
             clf = self._fit_classifier(data)
             self._report(clf, data)
-            if save:
-                self.save(clf, scaler)
-            
-    
-    def save(self, clf: ClassifierMixin, scaler: StandardScaler) -> None:
-        pass
-        # with open(
-        #     os.path.join(self._files_settings.static_dir, self._files_settings.classifier_model_filename), "wb"
-        # ) as f:
-        #     return pickle.load(f)
 
-    def load(self) -> ClassifierModel:
-        pass
-        # with open(
-        #     os.path.join(self._files_settings.static_dir, self._files_settings.classifier_model_filename), "rb"
-        # ) as f:
-        #     return pickle.load(f)
+            return ClassifierModel(clf, scaler)
+            
+    def save(self, clf_model: ClassifierModel, filename: str) -> None:
+        with open(filename, "wb") as f:
+            return pickle.dump(clf_model, f)
+
+    def load(self, filename: str) -> ClassifierModel:
+        with open(filename, "rb") as f:
+            return pickle.load(f)

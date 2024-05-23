@@ -9,6 +9,7 @@ from typing import Sequence
 import numpy as np
 from sklearn.svm import SVC
 
+from preprocessing.files import find_model_file
 from preprocessing.model import ClassifierModel, Model
 from speller.data_aquisition.data_collector import DataSampleType
 from speller.data_aquisition.epoch_getter import EpochType
@@ -33,7 +34,7 @@ class StubClassifier(IClassifier):
 class Classifier(IClassifier):
     def __init__(self, files_settings: FilesSettings, model: Model):
         self._files_settings = files_settings
-        self._clf_model = model.load()
+        self._clf_model = model.load(find_model_file(self._files_settings))
 
     def classify(self, epochs: np.ndarray) -> list[float]:
         logger.debug("Classifier: called classify()")

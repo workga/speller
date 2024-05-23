@@ -1,6 +1,7 @@
 from enum import StrEnum
 import signal
 from threading import Event
+from typing import Any
 from independency import Container, ContainerBuilder
 from independency.container import Dependency
 
@@ -42,15 +43,28 @@ def register_shutdown_event() -> Event:
 class SpellerContainerKey(StrEnum):
     SHUTDOWN_EVENT='SHUTDOWN_EVENT'
 
+def _get_files_settings_kwargs(clf_name: str | None, clf_comment: str | None) -> dict[str, Any]:
+    kwargs = {}
+    if clf_name:
+        kwargs['clf_name'] = clf_name
+    if clf_comment:
+        kwargs['clf_comment'] = clf_comment
+    return kwargs
 
-def get_speller_container(stub: bool = True) -> Container:
+
+def get_speller_container(stub: bool, clf_name: str | None, clf_comment: str | None) -> Container:
     builder = ContainerBuilder()
 
     builder.singleton(SpellerContainerKey.SHUTDOWN_EVENT.value, register_shutdown_event)
 
     builder.singleton(StrategySettings, lambda: StrategySettings())
     builder.singleton(ExperimentSettings, lambda: ExperimentSettings())
-    builder.singleton(FilesSettings, lambda: FilesSettings())
+    builder.singleton(
+        FilesSettings,
+        lambda: FilesSettings(
+            **_get_files_settings_kwargs(clf_name, clf_comment)
+        )
+    )
     builder.singleton(ViewSettings, lambda: ViewSettings())
     builder.singleton(LoggingSettings, lambda: LoggingSettings())
     builder.singleton(StateManagerSettings, lambda: StateManagerSettings())
@@ -59,6 +73,7 @@ def get_speller_container(stub: bool = True) -> Container:
     builder.singleton(ChatGPTSecretsSettings, lambda: ChatGPTSecretsSettings())
     builder.singleton(PreprocessorSettings, lambda: PreprocessorSettings())
     builder.singleton(EpochCollectorSettings, lambda: EpochCollectorSettings())
+    builder.singleton(ModelSettings, lambda: ModelSettings())
 
     builder.singleton(IRecorder, Recorder)
 
@@ -69,7 +84,9 @@ def get_speller_container(stub: bool = True) -> Container:
         builder.singleton(UnicornDataCollectorSettings, lambda: UnicornDataCollectorSettings())
         builder.singleton(IDataCollector, UnicornDataCollector)
 
-    builder.singleton(IClassifier, StubClassifier)
+
+    builder.singleton(Model, Model)
+    builder.singleton(IClassifier, Classifier)
 
     builder.singleton(IDictionary, Dictionary)
     builder.singleton(IT9Predictor, T9Predictor)

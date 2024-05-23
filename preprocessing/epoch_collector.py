@@ -43,7 +43,7 @@ class EpochCollector:
             baseline=(self._settings.baseline_start_s, self._settings.baseline_end_s),
         )
 
-        # тут хотелось бы рандомизации, а не просто брать семплы с начала
+        # ! тут хотелось бы рандомизации для нецелевых стимулов, а не просто брать семплы с начала
         if self._settings.equalize_events:
             epochs.equalize_event_counts(method=self._settings.equilize_events_method)  # DATA LOSS
 
