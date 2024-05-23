@@ -20,7 +20,7 @@ class EpochCollectorSettings(BaseSettings):
     baseline_end_s: float | None = 0
 
     equalize_events: bool = True  # крепко подумать!  # если False, то обязательно stratify
-    equilize_events_method: str = ('truncate', 'mintime')[0]  # крепко подумать!
+    equilize_events_method: str = ('random', 'truncate', 'mintime')[0]  # крепко подумать!
 
     @cached_property
     def epoch_pre_time_s(self) -> float:

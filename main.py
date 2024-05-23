@@ -11,7 +11,6 @@ from preprocessing.epoch_collector import EpochCollector
 from preprocessing.files import get_model_filename, get_preprocessed_files, get_raw_files
 from preprocessing.preprocessor import Preprocessor
 from preprocessing.collect_epochs_speller import view_file
-from preprocessing.settings import ModelSettings
 from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import FilesSettings, LoggingSettings

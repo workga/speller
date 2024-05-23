@@ -1,3 +1,5 @@
+import random
+import sys
 from typing import Sequence
 import mne
 import numpy as np
@@ -13,6 +15,20 @@ class EpochCollector:
 
     def _read_raw_data(self, src_file: str) -> mne.io.RawArray:
         return mne.io.read_raw(src_file)
+    
+    def _equalize_event_counts_randomly(self, epochs: mne.EpochsArray) -> mne.EpochsArray:
+        target_epochs = epochs["target"]
+        non_target_epochs = epochs["non-target"]
+
+        drop_count = len(non_target_epochs) - len(target_epochs)
+        assert drop_count > 0
+
+        # random.seed(0)
+        drop_indexes = random.sample(range(len(non_target_epochs)), drop_count)
+        non_target_epochs.drop(drop_indexes)
+
+        epochs = mne.concatenate_epochs([target_epochs, non_target_epochs])
+        return epochs
     
     @staticmethod
     def plot_comparison(epochs: mne.EpochsArray) -> None:
@@ -43,9 +59,13 @@ class EpochCollector:
             baseline=(self._settings.baseline_start_s, self._settings.baseline_end_s),
         )
 
-        # ! тут хотелось бы рандомизации для нецелевых стимулов, а не просто брать семплы с начала
-        if self._settings.equalize_events:
-            epochs.equalize_event_counts(method=self._settings.equilize_events_method)  # DATA LOSS
+        epochs.drop_bad()
+
+        if self._settings.equalize_events:  # DATA LOSS
+            if self._settings.equilize_events_method == 'random':
+                epochs = self._equalize_event_counts_randomly(epochs)
+            else:
+                epochs.equalize_event_counts(method=self._settings.equilize_events_method)
 
         return epochs
     
@@ -53,7 +73,6 @@ class EpochCollector:
         all_epochs = []
         for raw in raws:
             epochs = self.collect(raw)
-            epochs.drop_bad()
             all_epochs.append(epochs)
 
         result_epochs = mne.concatenate_epochs(all_epochs)
