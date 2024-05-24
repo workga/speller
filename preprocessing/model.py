@@ -46,8 +46,8 @@ class Model:
         upper_bound = int(len(epochs) * self._settings.data_proportion)
         return epochs[:upper_bound]
 
-    def _get_dataset_from_epochs(self, epochs: mne.Epochs, split: bool = True) -> Dataset:        
-        epochs_list = [self._get_epochs_subset(epochs[k]) for k in epochs.event_id]
+    def _get_dataset_from_epochs(self, epochs: mne.Epochs, split: bool = True) -> Dataset:
+        epochs_list = [self._get_epochs_subset(epochs[k]) for k in ('non-target', 'target')]  # order is important!
         X = [e.get_data(picks='eeg') for e in epochs_list]
         y = [k * np.ones(len(this_X)) for k, this_X in enumerate(X)]
         X = np.concatenate(X)

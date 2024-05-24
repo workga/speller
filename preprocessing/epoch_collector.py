@@ -49,7 +49,7 @@ class EpochCollector:
         
         events = mne.find_events(raw, stim_channel="STIM_EVENT")
 
-        event_dict = {"target": TARGET_MARKER, "non-target": NON_TARGET_MARKER}
+        event_dict = {"non-target": NON_TARGET_MARKER, "target": TARGET_MARKER}
         epochs = mne.Epochs(
             raw,
             events,
