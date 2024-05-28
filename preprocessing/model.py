@@ -103,11 +103,11 @@ class Model:
         )
         plt.show()
     
-    def fit(self, epochs: mne.Epochs, stats: bool = False) -> ClassifierModel | None:
+    def fit(self, epochs: mne.Epochs, stats: bool = False, split: bool = True) -> ClassifierModel | None:
         if self._settings.downsample_freq:
             epochs.resample(self._settings.downsample_freq)
 
-        data = self._get_dataset_from_epochs(epochs, split=not stats)
+        data = self._get_dataset_from_epochs(epochs, split=split)
         scaler = self._apply_scaler(data)
 
         if stats:

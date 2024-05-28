@@ -5,29 +5,29 @@ from pathlib import Path
 from speller.settings import FilesSettings
 
 
-def get_raw_files(records_dir: Path, name: str | None) -> list[str]:
-    pattern = "record*"
-    if name:
-        pattern += f"name={name}*"
-
-    files = (
-        set(glob.glob(f"{records_dir}\\{pattern}"))
-        - set(glob.glob(f"{records_dir}\\*PREPROCESSED*"))
-        - set(glob.glob(f"{records_dir}\\*test*"))
+def get_raw_files(records_dir: Path, name: str | None, day: int | None, iter: int | None = None) -> list[str]:
+    pattern = "raw\\{name}\\day_{day}\\record*iter_{iter}*".format(
+        name=name or '*',
+        day=day or '*',
+        iter = iter or '*'
     )
+    print(f"{records_dir}\\{pattern}")
+    files = glob.glob(f"{records_dir}\\{pattern}")
 
-    print(f"Got raw files: {len(files)}")
+    print(f"Got raw files: {files}")
     return files
 
 
-def get_preprocessed_files(records_dir: Path, name: str | None) -> list[str]:
-    pattern = "*PREPROCESSED*"
-    if name:
-        pattern = f"*name={name}" + pattern
+def get_preprocessed_files(records_dir: Path, name: str | None, day: int | None) -> list[str]:
+    pattern = "preprocessed\\{name}\\day_{day}\\record*".format(
+        name=name or '*',
+        day=day or '*',
+    )
 
+    print(f"{records_dir}\\{pattern}")
     files = glob.glob(f"{records_dir}\\{pattern}")
 
-    print(f"Got preprocessed files: {len(files)}")
+    print(f"Got preprocessed files: {files}")
     return files
 
 def get_model_filename(settings: FilesSettings, name: str | None, comment: str | None) -> str:

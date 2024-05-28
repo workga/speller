@@ -79,20 +79,20 @@ def preprocessor_group():
 
 
 @preprocessor_group.command()
-@click.argument("name")
-@click.argument("iter")
-@click.option("--view", is_flag=True, show_default=True, default=False)
-def preprocessor(name: str, iter: int, view: bool) -> None:
+@click.option("--name", required=True, help="Filter by name")
+@click.option("--day", required=True, help="Filter by name")
+@click.option("--iter", required=True, help="Filter by name")
+def preprocessor(name: str, day: int, iter: int) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
     epoch_collector = container.resolve(EpochCollector)
 
     files_settings = container.resolve(FilesSettings)
-    
-    file = glob.glob(f"{files_settings.records_dir}\\*name={name}*comment=iter_{iter}*")[0]
 
-    raw = preprocessor.preprocess(file, save=not view)
+    file =  get_raw_files(files_settings.records_dir, name, day, iter)[0]
+
+    raw = preprocessor.preprocess(file)
     epochs = epoch_collector.collect(raw)
     epoch_collector.plot_comparison(epochs)
 
@@ -102,10 +102,11 @@ def epoch_collector_group():
     pass
 
 
-@epoch_collector_group.command()
+@epoch_collector_group.command() 
 @click.option("--name", required=False, help="Filter by name")
+@click.option("--day", required=False, help="Filter by name")
 @click.option("--raw", is_flag=True, show_default=True, default=False, help="Use raw files without annotations")
-def epoch_collector(raw: bool, name: str | None) -> None:
+def epoch_collector(name: str | None, day: int | None, raw: bool) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -113,9 +114,9 @@ def epoch_collector(raw: bool, name: str | None) -> None:
     files_settings = container.resolve(FilesSettings)
 
     if raw:
-        files = [preprocessor.preprocess(file, silent=True) for file in get_raw_files(files_settings.records_dir, name)]
+        files = [preprocessor.preprocess(file, silent=True) for file in get_raw_files(files_settings.records_dir, name, day)]
     else:
-        files = get_preprocessed_files(files_settings.records_dir, name)
+        files = get_preprocessed_files(files_settings.records_dir, name, day)
 
     epochs = epoch_collector.collect_many(files)
     epoch_collector.plot_comparison(epochs)
@@ -128,11 +129,12 @@ def fit_model_group():
 
 @fit_model_group.command()
 @click.option("--name", required=False, help="Filter by name")
+@click.option("--day", required=False, help="Filter by name")
 @click.option("--raw", is_flag=True, show_default=True, default=False, help="Use raw files without annotations")
 @click.option("--stats", is_flag=True, show_default=True, default=False)
 @click.option("--save", is_flag=True, show_default=True, default=False)
 @click.option("--comment", required=False, help="Comment for model filename")
-def fit_model(raw: bool, name: str | None, stats: bool, save: bool, comment: str | None) -> None:
+def fit_model(raw: bool, name: str | None, stats: bool, save: bool, comment: str | None, day: int | None) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -141,12 +143,12 @@ def fit_model(raw: bool, name: str | None, stats: bool, save: bool, comment: str
     files_settings = container.resolve(FilesSettings)
 
     if raw:
-        files = [preprocessor.preprocess(file, silent=True) for file in get_raw_files(files_settings.records_dir, name)]
+        files = [preprocessor.preprocess(file, silent=True) for file in get_raw_files(files_settings.records_dir, name, day)]
     else:
-        files = get_preprocessed_files(files_settings.records_dir, name)
+        files = get_preprocessed_files(files_settings.records_dir, name, day)
     
     epochs = epoch_collector.collect_many(files)
-    clf_model = model.fit(epochs, stats=stats)
+    clf_model = model.fit(epochs, stats=stats, split=not stats)
     if save:
         filename = get_model_filename(files_settings, name, comment)
         model.save(clf_model, filename)

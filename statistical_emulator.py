@@ -59,12 +59,12 @@ def plot_results(results: dict[tuple[float, float], list[tuple[int, float]]], tr
 
         x , y = list(zip(*data))
         axis[i, j].plot(x, y, color=color)
-        axis[i, j].set_title(title, fontdict={'fontsize': 10, 'color': color}) 
+        axis[i, j].set_title(title, fontdict={'fontsize': 12, 'color': color}) 
         axis[i, j].set_xlim(0, max(n_options))
         axis[i, j].set_ylim(0, 1)
  
     plt.rcParams['figure.constrained_layout.use'] = True
-    plt.subplots_adjust(hspace=1)
+    plt.subplots_adjust(wspace=0.6, hspace=0.6)
     plt.show()
 
 
