@@ -10,7 +10,6 @@ from preprocessing.model import Model
 from preprocessing.epoch_collector import EpochCollector
 from preprocessing.files import get_model_filename, get_preprocessed_files, get_raw_files
 from preprocessing.preprocessor import Preprocessor
-from preprocessing.collect_epochs_speller import view_file
 from speller.monitoring.visualizer import MonitoringVisualizer
 from speller.session.speller_runner import SpellerRunner
 from speller.settings import FilesSettings, LoggingSettings
@@ -62,18 +61,6 @@ def monitoring(stub: bool, file: bool) -> None:
 
 
 @click.group()
-def viewer_group():
-    pass
-
-
-@viewer_group.command()
-@click.argument("file", required=False)
-@click.option("--target", default=5, help="Target item")
-def viewer(file: str | None, target: int) -> None:
-    view_file(file, target)
-
-
-@click.group()
 def preprocessor_group():
     pass
 
@@ -106,7 +93,8 @@ def epoch_collector_group():
 @click.option("--name", required=False, help="Filter by name")
 @click.option("--day", required=False, help="Filter by name")
 @click.option("--raw", is_flag=True, show_default=True, default=False, help="Use raw files without annotations")
-def epoch_collector(name: str | None, day: int | None, raw: bool) -> None:
+@click.option("--view", required=False, default=10, help="View epochs examples")
+def epoch_collector(name: str | None, day: int | None, raw: bool, view: int) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -119,6 +107,9 @@ def epoch_collector(name: str | None, day: int | None, raw: bool) -> None:
         files = get_preprocessed_files(files_settings.records_dir, name, day)
 
     epochs = epoch_collector.collect_many(files)
+    if view:
+        epochs[:view].plot(events=True, event_color={2: "g", 7: "r"}, block=True)
+
     epoch_collector.plot_comparison(epochs)
 
 
@@ -174,7 +165,6 @@ cli = click.CommandCollection(
     sources=[
         speller_group,
         monitoring_group,
-        viewer_group,
         preprocessor_group,
         epoch_collector_group,
         fit_model_group,
