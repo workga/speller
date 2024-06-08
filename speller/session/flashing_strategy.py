@@ -91,7 +91,7 @@ class SquareSingleCharacterFlashingStrategy(IFlashingStrategy):
         for i in range(self._strategy_settings.keyboard_size):
             row = accumulators[i * self._strategy_settings.keyboard_size: (i + 1) * self._strategy_settings.keyboard_size]
             lines.append('\t'.join(map(str, row)))
-        logger.info("Probabilities distribution: %s", '\n'.join(lines))
+        logger.info("Probabilities distribution:\n%s", '\n'.join(lines))
 
         index = max(range(len(accumulators)), key=accumulators.__getitem__)
         return index // 4, index % 4

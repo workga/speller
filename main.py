@@ -16,6 +16,7 @@ from speller.settings import FilesSettings, LoggingSettings
 from speller.view.speller_view import SpellerView
 
 
+logging.basicConfig(level=LoggingSettings().level)
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +33,6 @@ def speller(stub: bool, clf_name: str | None, clf_comment: str | None) -> None:
     # import sys
     # sys.setswitchinterval(0.001)
     container = get_speller_container(stub, clf_name, clf_comment)
-
-    logging.basicConfig(level=container.resolve(LoggingSettings).level)
 
     speller_runner = container.resolve(SpellerRunner)
     speller_view = container.resolve(SpellerView)
@@ -69,7 +68,8 @@ def preprocessor_group():
 @click.option("--name", required=True, help="Filter by name")
 @click.option("--day", required=True, help="Filter by name")
 @click.option("--iter", required=True, help="Filter by name")
-def preprocessor(name: str, day: int, iter: int) -> None:
+@click.option("--no-save", is_flag=True, show_default=True, default=False)
+def preprocessor(name: str, day: int, iter: int, no_save: bool = False) -> None:
     container = get_model_container()
 
     preprocessor = container.resolve(Preprocessor)
@@ -79,7 +79,7 @@ def preprocessor(name: str, day: int, iter: int) -> None:
 
     file =  get_raw_files(files_settings.records_dir, name, day, iter)[0]
 
-    raw = preprocessor.preprocess(file)
+    raw = preprocessor.preprocess(file, save=not no_save)
     epochs = epoch_collector.collect(raw)
     epoch_collector.plot_comparison(epochs)
 
